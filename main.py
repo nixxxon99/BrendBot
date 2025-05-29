@@ -6,7 +6,6 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Update
 from bot import dp, bot
 
-# ─────── Webhook config ───────
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "MARS")
 WEBHOOK_PATH = f"/webhook/{WEBHOOK_SECRET}"
 WEBHOOK_URL = os.getenv("WEBHOOK_URL") + WEBHOOK_PATH
@@ -25,14 +24,17 @@ def handle_webhook():
 def hello():
     return "Bot is alive"
 
-# Устанавливаем webhook при старте
-@app.before_first_request
-def setup():
-    loop.create_task(bot.set_webhook(WEBHOOK_URL))
-
-if __name__ == "__main__":
+# 🧠 Функция запуска
+async def main():
+    await bot.set_webhook(WEBHOOK_URL)
+    print(f"✅ Webhook установлен: {WEBHOOK_URL}")
     import hypercorn.asyncio
     import hypercorn.config
     config = hypercorn.config.Config()
     config.bind = ["0.0.0.0:10000"]
-    loop.run_until_complete(hypercorn.asyncio.serve(app, config))
+    await hypercorn.asyncio.serve(app, config)
+
+# 🚀 Запуск
+if __name__ == "__main__":
+    loop.run_until_complete(main())
+
