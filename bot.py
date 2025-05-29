@@ -210,5 +210,8 @@ async def test_answer(m: Message):
         await m.answer(f"❌ Неверно. Правильный ответ: {st['correct']}")
     st["step"] += 1
     await ask(m)
+@dp.message(F.photo)
+async def get_file_id(m: Message):
+    await m.answer(f"✅ Получен file_id:\n<code>{m.photo[-1].file_id}</code>")
 
 dp.include_routers(main_router, whisky_router, tests_router)
