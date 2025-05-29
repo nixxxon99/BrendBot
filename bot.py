@@ -53,28 +53,114 @@ async def whisky_back(m: Message):
 @whisky_router.message(F.text == "Monkey Shoulder")
 async def monkey_shoulder(m: Message):
     await m.answer_photo(
-        photo="https://upload.wikimedia.org/wikipedia/commons/8/8d/Monkey_Shoulder_scotch_bottle.jpg",
+        photo="https://i.imgur.com/NO5rR64.png",
         caption="""<b>Monkey Shoulder</b>
-• Купажированный шотландский виски (Glenfiddich + Balvenie + Kininvie)
+• Купаж из Glenfiddich, Balvenie и Kininvie
 • Аромат: ваниль, мёд, цитрус
-• Вкус: карамель, тёплые специи, тостовый хлеб
-• Крепость 40 %
-• Идеален для Old Fashioned и Whisky Sour
-• Бронзовые «плечи» на бутылке — символ тройного солода"""
+• Вкус: карамель, специи, тосты
+• Крепость: 40 %
+• Идеален для Old Fashioned и Whisky Sour"""
     )
+
 @whisky_router.message(F.text == "Glenfiddich 12 Years")
 async def glenfiddich_12(m: Message):
     await m.answer_photo(
-        photo="https://www.thewhiskyexchange.com/media/1000412.jpg",
-        caption=(
-            "<b>Glenfiddich 12 Years Old</b>\n"
-            "• Односолодовый шотландский виски из региона Спейсайд\n"
-            "• Аромат: груша, яблоко, дуб\n"
-            "• Вкус: сливочная ваниль, свежие фрукты, немного дуба\n"
-            "• Выдержка: минимум 12 лет в бочках из-под бурбона и хереса\n"
-            "• Крепость: 40 %\n"
-            "• Идеален для знакомства с односолодовыми виски"
-        )
+        photo="https://i.imgur.com/I7x2LMf.png",
+        caption="""<b>Glenfiddich 12 YO</b>
+• Односолодовый виски из Спейсайда
+• Аромат: груша, дуб, цветы
+• Вкус: ваниль, яблоко, херес
+• Крепость: 40 %
+• Выдержка: 12 лет в бочках из-под бурбона и хереса"""
+    )
+
+@whisky_router.message(F.text == "Fire & Cane")
+async def fire_and_cane(m: Message):
+    await m.answer_photo(
+        photo="https://i.imgur.com/z4cKozt.png",
+        caption="""<b>Glenfiddich Fire & Cane</b>
+• Экспериментальный торфяной виски
+• Аромат: дым, специи, цитрусы
+• Вкус: сладкий дым, ириска, дуб
+• Выдержан в бочках из-под рома"""
+    )
+
+@whisky_router.message(F.text == "IPA Experiment")
+async def ipa_experiment(m: Message):
+    await m.answer_photo(
+        photo="https://i.imgur.com/HzOE68J.png",
+        caption="""<b>Glenfiddich IPA Experiment</b>
+• Выдержан в бочках из-под IPA-пива
+• Аромат: хмель, яблоко, ваниль
+• Вкус: свежий, с фруктами и травами
+• Идеален для крафтовых коктейлей"""
+    )
+
+@whisky_router.message(F.text == "Grant's Classic")
+async def grants_classic(m: Message):
+    await m.answer_photo(
+        photo="https://i.imgur.com/npfZdM2.png",
+        caption="""<b>Grant's Triple Wood</b>
+• Купаж из 25 виски, выдержан в 3 бочках
+• Аромат: карамель, груша, ваниль
+• Вкус: мед, специи, дуб
+• Отличный выбор по цене"""
+    )
+
+@whisky_router.message(F.text == "Grant's Summer Orange")
+async def grants_orange(m: Message):
+    await m.answer_photo(
+        photo="https://i.imgur.com/M59uWKm.png",
+        caption="""<b>Grant's Summer Orange</b>
+• Виски с натуральным апельсином
+• Аромат: апельсин, ваниль
+• Вкус: цитрусы, мед, сливки
+• Идеален в чистом виде и в коктейлях"""
+    )
+
+@whisky_router.message(F.text == "Grant's Winter Dessert")
+async def grants_winter(m: Message):
+    await m.answer_photo(
+        photo="https://i.imgur.com/qkCn5nW.png",
+        caption="""<b>Grant's Winter Dessert</b>
+• Виски с тёплыми специями и нотами яблочного пирога
+• Вкус: яблоко, корица, карамель
+• Уютный напиток для зимних вечеров"""
+    )
+
+@whisky_router.message(F.text == "Grant's Tropical Fiesta")
+async def grants_fiesta(m: Message):
+    await m.answer_photo(
+        photo="https://i.imgur.com/V9aRQnN.png",
+        caption="""<b>Grant's Tropical Fiesta</b>
+• Летняя версия с тропическими фруктами
+• Аромат: ананас, маракуйя
+• Вкус: экзотика, специи, виски
+• Освежающий и лёгкий"""
+    )
+
+@whisky_router.message(F.text == "Tullamore D.E.W.")
+async def tullamore_dew(m: Message):
+    await m.answer_photo(
+        photo="https://i.imgur.com/p86DH2q.png",
+        caption="""<b>Tullamore D.E.W.</b>
+• Ирландский тройной дистилляции виски
+• Аромат: яблоко, ваниль, мёд
+• Вкус: орехи, сливки, древесина
+• Крепость: 40 %
+• Классика ирландского виски"""
+    )
+
+@whisky_router.message(F.text == "Tullamore D.E.W. Honey")
+async def tullamore_honey(m: Message):
+    await m.answer_photo(
+        photo="https://i.imgur.com/QjRV6gt.png",
+        caption="""<b>Tullamore Honey</b>
+• Ирландский виски с натуральным мёдом
+• Вкус: мягкий, сладкий, цветочный
+• Идеален в шотах и на льду"""
+    )
+
     )
 
 tests_router = Router()
