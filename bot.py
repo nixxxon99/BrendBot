@@ -53,20 +53,22 @@ async def whisky_back(m: Message):
 @whisky_router.message(F.text == "Monkey Shoulder")
 async def monkey_shoulder(m: Message):
     await m.answer_photo(
-        photo="AgACAgIAAxkBAAIGg16m5JjxbcM9v8c817BDrLN90pAAJe7JEbCVn3JfFc0WI8hxrQ0ADAAgbADeAADWgQ",  # твой file_id
+        photo="AgACAgIAAxkBAAIG16g5JjxbcM9v8c81B7DLnN09pAAaJ7JEbCVn3JffC0Wl8hxrQ0AADbAgbAeAADWgQ",  # твой file_id
         caption=(
             "<b>Monkey Shoulder</b>\n"
             "• Купажированный шотландский виски от William Grant & Sons\n"
             "• Состоит из солодов Glenfiddich, Balvenie и Kininvie\n"
             "• Название отсылает к травме плеча у солодовщиков\n"
             "• Яркий ванильно-медовый аромат с нотами цитруса\n"
-            "• Вкус: тёплая карамель, специи, тост\n"
+            "• Вкус: тёплая карамель, специи, тосты\n"
             "• Бархатистый и мягкий, идеально сбалансирован\n"
             "• Крепость: 40 % ABV\n"
             "• Идеален для коктейлей: Old Fashioned, Whisky Sour\n"
             "• Три медные обезьяны на бутылке — символ тройного бленда"
-        )
+        ),
+        parse_mode="HTML"
     )
+
 
 
 
