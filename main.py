@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Update
 from bot import dp, bot
 
-WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "mysecret")
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "mars")
 WEBHOOK_PATH = f"/webhook/{WEBHOOK_SECRET}"
 WEBHOOK_URL = os.getenv("WEBHOOK_URL") + WEBHOOK_PATH
 
