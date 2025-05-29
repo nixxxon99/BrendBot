@@ -192,7 +192,7 @@ async def grants_winter_dessert(m: Message):
 @whisky_router.message(F.text == "Grant's Tropical Fiesta")
 async def grants_tropical_fiesta(m: Message):
     await m.answer_photo(
-        photo=AgACAgIAAxkBAAIG4Gg4ndPl6Fi0nM3zF9P8Va09iX6LAAIN9TEb1P3ISQ2wk7vc2-toAQADAgADeQADNgQ",  # ← сюда вставь свой file_id
+        photo="AgACAgIAAxkBAAIG4Gg4ndPl6Fi0nM3zF9P8Va09iX6LAAIN9TEb1P3ISQ2wk7vc2-toAQADAgADeQADNgQ",  # ← сюда вставь свой file_id
         caption=(
             "<b>Grant’s Tropical Fiesta</b>\n"
             "• Лимитированная версия виски с тропическим характером\n"
