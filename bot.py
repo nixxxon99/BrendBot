@@ -53,8 +53,8 @@ async def whisky_back(m: Message):
 @whisky_router.message(F.text == "Monkey Shoulder")
 async def monkey_shoulder(m: Message):
     await m.answer_photo(
-        photo="https://upload.wikimedia.org/wikipedia/commons/8/8d/Monkey_Shoulder_scotch_bottle.jpg
-",
+        photo="https://upload.wikimedia.org/wikipedia/commons/8/8d/Monkey_She.jpg",
+        
         caption="""<b>Monkey Shoulder</b>
 • Купаж из Glenfiddich, Balvenie и Kininvie
 • Аромат: ваниль, мёд, цитрус
