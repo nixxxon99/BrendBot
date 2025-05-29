@@ -161,7 +161,7 @@ async def tullamore_honey(m: Message):
 • Идеален в шотах и на льду"""
     )
 
-    )
+    
 
 tests_router = Router()
 TESTS_MENU_KB = kb("🧪 Тест по Jägermeister", "Назад")
