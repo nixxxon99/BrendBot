@@ -53,7 +53,7 @@ async def whisky_back(m: Message):
 @whisky_router.message(F.text == "Monkey Shoulder")
 async def monkey_shoulder(m: Message):
     await m.answer_photo(
-        photo="AgACAgIAAxkBAAIG1Gg4mSjJixcbMGy0c8I78DrLN9OpAAJe7jEbCVnJSTfCOMW8hxrQAQADAgADeAADNgQ",  # сюда вставляешь file_id без кавычек если это переменная, или в кавычках если просто строка
+        photo="AgACAgIAAxkBAAIGg16m5JjxbcM9v8c817BDrLN90pAAJe7JEbCVn3JfFc0WI8hxrQ0ADAAgbADeAADWgQ",  # твой file_id
         caption=(
             "<b>Monkey Shoulder</b>\n"
             "• Купажированный шотландский виски от William Grant & Sons\n"
@@ -68,12 +68,7 @@ async def monkey_shoulder(m: Message):
         )
     )
 
-• Купаж из Glenfiddich, Balvenie и Kininvie
-• Аромат: ваниль, мёд, цитрус
-• Вкус: карамель, специи, тосты
-• Крепость: 40 %
-• Идеален для Old Fashioned и Whisky Sour"""
-    )
+
 
 @whisky_router.message(F.text == "Glenfiddich 12 Years")
 async def glenfiddich_12(m: Message):
