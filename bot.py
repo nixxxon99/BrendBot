@@ -53,7 +53,7 @@ async def whisky_back(m: Message):
 @whisky_router.message(F.text == "Monkey Shoulder")
 async def monkey_shoulder(m: Message):
     await m.answer_photo(
-        photo="AgACAgIAAxkBAAIG16g5JjxbcM9v8c81B7DLnN09pAAaJ7JEbCVn3JffC0Wl8hxrQ0AADbAgbAeAADWgQ",  # твой file_id
+        photo="AgACAgIAAxkBAAIG1Gg4mSjJixcbMGy0c8I78DrLN9OpAAJe7jEbCVnJSTfCOMW8hxrQAQADAgADeAADNgQ",  # твой file_id
         caption=(
             "<b>Monkey Shoulder</b>\n"
             "• Купажированный шотландский виски от William Grant & Sons\n"
