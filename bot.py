@@ -69,107 +69,194 @@ async def monkey_shoulder(m: Message):
         parse_mode="HTML"
     )
 
-
-
-
 @whisky_router.message(F.text == "Glenfiddich 12 Years")
 async def glenfiddich_12(m: Message):
     await m.answer_photo(
-        photo="https://i.imgur.com/I7x2LMf.png",
-        caption="""<b>Glenfiddich 12 YO</b>
-• Односолодовый виски из Спейсайда
-• Аромат: груша, дуб, цветы
-• Вкус: ваниль, яблоко, херес
-• Крепость: 40 %
-• Выдержка: 12 лет в бочках из-под бурбона и хереса"""
+        photo="AgACAgIAAxkBAAIG2Gg4ncf9Rpxv9rooJ0Ha2FD40CORAAK_8jEbPObJSR3uT8xKG0UpAQADAgADeQADNgQ",  # ← сюда вставь свой file_id без кавычек
+        caption=(
+            "<b>Glenfiddich 12 Years Old</b>\n"
+            "• Односолодовый шотландский виски из региона Спейсайд\n"
+            "• Аромат: груша, дуб, свежесть\n"
+            "• Вкус: зелёные яблоки, ваниль, лёгкий дуб\n"
+            "• Выдержан минимум 12 лет в бочках из-под бурбона и хереса\n"
+            "• Производится на самой продаваемой винокурне в мире\n"
+            "• Символ — олень на эмблеме (в переводе: «долина оленей»)\n"
+            "• Крепость: 40 % ABV\n"
+            "• Идеален для знакомства с миром односолодовых виски\n"
+            "• Отлично подойдёт как в чистом виде, так и со льдом"
+        ),
+        parse_mode="HTML"
     )
 
 @whisky_router.message(F.text == "Fire & Cane")
 async def fire_and_cane(m: Message):
     await m.answer_photo(
-        photo="https://i.imgur.com/z4cKozt.png",
-        caption="""<b>Glenfiddich Fire & Cane</b>
-• Экспериментальный торфяной виски
-• Аромат: дым, специи, цитрусы
-• Вкус: сладкий дым, ириска, дуб
-• Выдержан в бочках из-под рома"""
+        photo="AgACAgIAAxkBAAIG2mg4ncuOjEqivJgv27H62zK4XOvFAAIK9TEb1P3ISXHpOhsLyQ4DAQADAgADeQADNgQ",  # ← вставь свой file_id
+        caption=(
+            "<b>Glenfiddich Fire & Cane</b>\n"
+            "• Экспериментальная линейка от Glenfiddich\n"
+            "• Купажированный односолодовый виски с торфяным дымком\n"
+            "• Аромат: сладкий дым, дуб, зелёное яблоко\n"
+            "• Вкус: карамель, специи, жареный сахар, дым\n"
+            "• Финиш: насыщенный, с оттенками костра и специй\n"
+            "• Выдержка в бочках из-под бурбона и рома из Латинской Америки\n"
+            "• Отличное сочетание сладости и торфа\n"
+            "• Крепость: 43 % ABV\n"
+            "• Подходит тем, кто хочет попробовать «дым» впервые\n"
+            "• Подчёркивает инновации Glenfiddich"
+        ),
+        parse_mode="HTML"
     )
 
 @whisky_router.message(F.text == "IPA Experiment")
 async def ipa_experiment(m: Message):
     await m.answer_photo(
-        photo="https://i.imgur.com/HzOE68J.png",
-        caption="""<b>Glenfiddich IPA Experiment</b>
-• Выдержан в бочках из-под IPA-пива
-• Аромат: хмель, яблоко, ваниль
-• Вкус: свежий, с фруктами и травами
-• Идеален для крафтовых коктейлей"""
+        photo="AgACAgIAAxkBAAIG52g4npbaJO1p_0s7aVNpQ5_r9nkEAAIT9TEb1P3ISRjGBYkQaU3hAQADAgADeQADNgQ",  # ← вставь свой file_id
+        caption=(
+            "<b>Glenfiddich IPA Experiment</b>\n"
+            "• Первая в мире коллаборация виски и крафтового IPA-пива\n"
+            "• Выдержан в бочках из-под индийского светлого эля\n"
+            "• Аромат: хмель, свежие травы, яблоко, груша\n"
+            "• Вкус: ваниль, зелёные яблоки, цитрусы, хмелевая горчинка\n"
+            "• Экспериментальный и освежающий профиль\n"
+            "• Отлично подойдёт для пивных любителей, начинающих знакомство с виски\n"
+            "• Крепость: 43 % ABV\n"
+            "• Часть линейки Experimental Series от Glenfiddich\n"
+            "• Ограниченное издание — подчеркивает креативность бренда\n"
+            "• Идеален для дегустаций и обсуждений вкусов"
+        ),
+        parse_mode="HTML"
     )
 
 @whisky_router.message(F.text == "Grant's Classic")
 async def grants_classic(m: Message):
     await m.answer_photo(
-        photo="https://i.imgur.com/npfZdM2.png",
-        caption="""<b>Grant's Triple Wood</b>
-• Купаж из 25 виски, выдержан в 3 бочках
-• Аромат: карамель, груша, ваниль
-• Вкус: мед, специи, дуб
-• Отличный выбор по цене"""
+        photo="AgACAgIAAxkBAAIG3Gg4nc5TGsJHjrEPyk-J7PNFHVvAAAIL9TEb1P3ISZjP54Yf2Z6PAQADAgADeQADNgQ",  # ← вставь свой file_id
+        caption=(
+            "<b>Grant’s Triple Wood (Classic)</b>\n"
+            "• Классический купажированный шотландский виски\n"
+            "• Выдержан в трёх типах бочек: бурбон, американский новый дуб, херес\n"
+            "• Аромат: ваниль, карамель, яблоко, специи\n"
+            "• Вкус: мягкий, с нотами ванили, дуба и пряностей\n"
+            "• Финиш: длительный, гладкий, немного сладковатый\n"
+            "• Крепость: 40 % ABV\n"
+            "• Отличный выбор для коктейлей или чистого вида\n"
+            "• Самый популярный вариант в линейке Grant’s\n"
+            "• Идеален для повседневного употребления\n"
+            "• Баланс цены и качества"
+        ),
+        parse_mode="HTML"
     )
 
+
 @whisky_router.message(F.text == "Grant's Summer Orange")
-async def grants_orange(m: Message):
+async def grants_summer_orange(m: Message):
     await m.answer_photo(
-        photo="https://i.imgur.com/M59uWKm.png",
-        caption="""<b>Grant's Summer Orange</b>
-• Виски с натуральным апельсином
-• Аромат: апельсин, ваниль
-• Вкус: цитрусы, мед, сливки
-• Идеален в чистом виде и в коктейлях"""
+        photo="AgACAgIAAxkBAAIG4mg4ndf9tfQikXAQPk-lIxaS4yMsAAIO9TEb1P3ISWY8m8SH7F44AQADAgADeQADNgQ",  # ← сюда вставь свой file_id
+        caption=(
+            "<b>Grant’s Summer Orange</b>\n"
+            "• Купажированный шотландский виски с натуральным вкусом апельсина\n"
+            "• Яркий, фруктовый и освежающий профиль\n"
+            "• Аромат: цедра апельсина, ваниль, мёд\n"
+            "• Вкус: сладкий апельсин, специи, лёгкая дубовая горчинка\n"
+            "• Крепость: 35 % ABV — мягкий и лёгкий\n"
+            "• Идеален со льдом, содовой или в коктейлях\n"
+            "• Летняя лимитка, созданная для освежающих напитков\n"
+            "• Отличный вариант для тех, кто не любит крепкий виски\n"
+            "• Современный стиль, ориентированный на молодую аудиторию\n"
+            "• Хорош для вечеринок, летних террас и лёгкого ужина"
+        ),
+        parse_mode="HTML"
     )
 
 @whisky_router.message(F.text == "Grant's Winter Dessert")
-async def grants_winter(m: Message):
+async def grants_winter_dessert(m: Message):
     await m.answer_photo(
-        photo="https://i.imgur.com/qkCn5nW.png",
-        caption="""<b>Grant's Winter Dessert</b>
-• Виски с тёплыми специями и нотами яблочного пирога
-• Вкус: яблоко, корица, карамель
-• Уютный напиток для зимних вечеров"""
+        photo="AgACAgIAAxkBAAIG3mg4ndDXJWAkbTrFKLhtgoVbFaDsAAIM9TEb1P3ISZq_Ca_jZFUSAQADAgADeQADNgQ",  # ← сюда вставь свой file_id
+        caption=(
+            "<b>Grant’s Winter Dessert</b>\n"
+            "• Десертный купажированный виски с акцентом на тёплые, зимние ноты\n"
+            "• Аромат: сливочная карамель, глинтвейн, печёные яблоки\n"
+            "• Вкус: ваниль, тёмный шоколад, пряности, корица\n"
+            "• Мягкий, согревающий характер\n"
+            "• Крепость: 35 % ABV — деликатный и уютный\n"
+            "• Идеален с тёплым яблочным соком или в десертных коктейлях\n"
+            "• Отлично сочетается с выпечкой и шоколадом\n"
+            "• Лимитированный выпуск на холодный сезон\n"
+            "• Подходит для подарков и уютных зимних вечеров\n"
+            "• Яркий пример вкусового виски без лишней крепости"
+        ),
+        parse_mode="HTML"
     )
 
 @whisky_router.message(F.text == "Grant's Tropical Fiesta")
-async def grants_fiesta(m: Message):
+async def grants_tropical_fiesta(m: Message):
     await m.answer_photo(
-        photo="https://i.imgur.com/V9aRQnN.png",
-        caption="""<b>Grant's Tropical Fiesta</b>
-• Летняя версия с тропическими фруктами
-• Аромат: ананас, маракуйя
-• Вкус: экзотика, специи, виски
-• Освежающий и лёгкий"""
+        photo=AgACAgIAAxkBAAIG4Gg4ndPl6Fi0nM3zF9P8Va09iX6LAAIN9TEb1P3ISQ2wk7vc2-toAQADAgADeQADNgQ",  # ← сюда вставь свой file_id
+        caption=(
+            "<b>Grant’s Tropical Fiesta</b>\n"
+            "• Лимитированная версия виски с тропическим характером\n"
+            "• Аромат: ананас, манго, кокос, сладкие специи\n"
+            "• Вкус: лёгкий, фруктовый, с нотами ванили и карамели\n"
+            "• Основа — классический Grant’s с добавлением натуральных ароматов\n"
+            "• Крепость: 35 % ABV — мягкий и лёгкий для пития\n"
+            "• Отличен в охлаждённом виде или с соком\n"
+            "• Подходит для летних коктейлей и вечеринок\n"
+            "• Стильная бутылка с ярким тропическим дизайном\n"
+            "• Отличный выбор для любителей мягкого виски\n"
+            "• Создан для новых поколений потребителей"
+        ),
+        parse_mode="HTML"
     )
 
 @whisky_router.message(F.text == "Tullamore D.E.W.")
 async def tullamore_dew(m: Message):
     await m.answer_photo(
-        photo="https://i.imgur.com/p86DH2q.png",
-        caption="""<b>Tullamore D.E.W.</b>
-• Ирландский тройной дистилляции виски
-• Аромат: яблоко, ваниль, мёд
-• Вкус: орехи, сливки, древесина
-• Крепость: 40 %
-• Классика ирландского виски"""
+        photo="AgACAgIAAxkBAAIG5Gg4npCx1IL5QMiN-XatPLCICdo1AALG8jEbPObJSSzMH93C0bHVAQADAgADeQADNgQ",  # ← сюда вставь свой file_id
+        caption=(
+            "<b>Tullamore D.E.W.</b>\n"
+            "• Ирландский трипл-бленд виски (солод + зерно + пот-стилл)\n"
+            "• Аромат: зелёное яблоко, ваниль, сливки\n"
+            "• Вкус: мягкий, слегка сладковатый, с фруктовыми и древесными нотами\n"
+            "• Выдержан в бочках из-под бурбона и хереса\n"
+            "• Крепость: 40 % ABV\n"
+            "• Один из самых узнаваемых ирландских виски в мире\n"
+            "• Идеален для начинающих и коктейлей\n"
+            "• История бренда с 1829 года (г. Талламор, Ирландия)\n"
+            "• Название D.E.W. — инициалы первого владельца: Daniel E. Williams\n"
+            "• Слоган: ‘Give every man his D.E.W.’"
+        ),
+        parse_mode="HTML"
     )
 
 @whisky_router.message(F.text == "Tullamore D.E.W. Honey")
 async def tullamore_honey(m: Message):
     await m.answer_photo(
-        photo="https://i.imgur.com/QjRV6gt.png",
-        caption="""<b>Tullamore Honey</b>
-• Ирландский виски с натуральным мёдом
-• Вкус: мягкий, сладкий, цветочный
-• Идеален в шотах и на льду"""
+        photo="вставь_сюда_file_id",  # ← сюда вставь свой file_id
+        caption=(
+            "<b>Tullamore D.E.W. Honey</b>\n"
+            "• Ирландский виски ликёр на основе оригинального Tullamore D.E.W.\n"
+            "• Настоян на натуральном мёде\n"
+            "• Аромат: цветочный, мёд, ваниль, немного трав\n"
+            "• Вкус: сладкий, сливочный, мягкий — с нотами виски и мёда\n"
+            "• Крепость: 35 % ABV\n"
+            "• Подаётся охлаждённым или со льдом\n"
+            "• Идеален для шотов и коктейлей\n"
+            "• Новинка для любителей мягких вкусов\n"
+            "• Стильная бутылка с тиснением\n"
+            "• Отличный выбор для женской аудитории и новичков"
+        ),
+        parse_mode="HTML"
     )
+
+
+
+
+
+
+
+
+
 
     
 
