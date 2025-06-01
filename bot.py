@@ -246,10 +246,7 @@ async def tullamore_honey(m: Message):
             "• Стильная бутылка с тиснением\n"
             "• Отличный выбор для женской аудитории и новичков"
         ),
-        parse_mode="HTML"
-        vodka_router = Router()
-    
-    )
+vodka_router = Router()
 
 @vodka_router.message(F.text == "Серебрянка")
 async def srebryanka(m: Message):
@@ -265,7 +262,6 @@ async def srebryanka(m: Message):
             "• Форматы: 0.5 и 0.7 л\n"
             "• Представлена в трёх вариантах: Классическая, Лайт (37,5%) и Rey\n"
             "• Идеальна в паре с солёными закусками и мясом"
-            
         )
     )
 
@@ -329,4 +325,5 @@ async def test_answer(m: Message):
 async def get_file_id(m: Message):
     await m.answer(f"✅ Получен file_id:\n<code>{m.photo[-1].file_id}</code>")
 
-dp.include_routers(main_router, whisky_router, tests_router)
+dp.include_routers(main_router, whisky_router, tests_router, vodka_router)
+
