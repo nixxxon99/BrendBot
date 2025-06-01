@@ -302,7 +302,7 @@ async def reyka(m: Message):
 @vodka_router.message(F.text == "Finlandia")
 async def finlandia(m: Message):
     await m.answer_photo(
-        photo="AgACAgIAAxkBAAILC2g8Eli-TYUT9EM8fzglAi5soVNhAAKJ9zEbPHPgSekXdAio1hxGAQADAgADeQADNgQЬ",
+        photo="AgACAgIAAxkBAAILC2g8Eli-TYUT9EM8fzglAi5soVNhAAKJ9zEbPHPgSekXdAio1hxGAQADAgADeQADNgQ",
         caption=(
             "<b>Finlandia</b>\n"
             "• Всемирно известная водка из Финляндии\n"
