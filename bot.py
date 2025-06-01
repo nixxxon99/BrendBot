@@ -248,10 +248,10 @@ async def tullamore_honey(m: Message):
         )
     )
 
-# ——— Клавиатура водки ———
+
 VODKA_KB = kb(
     "Серебрянка", "Reyka", "Finlandia", "Зелёная марка",
-    "Талка", "Русский стандарт", "Назад", width=2
+    "Талка", "Русский Стандарт", "Назад", width=2
 )
 
 vodka_router = Router()
