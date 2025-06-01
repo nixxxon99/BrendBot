@@ -605,6 +605,9 @@ async def chale_de_sud(m: Message):
         )
     )
 
+from random import shuffle
+from aiogram.types import ReplyKeyboardRemove
+
 tests_router = Router()
 
 TESTS_MENU_KB = kb(
@@ -662,7 +665,7 @@ async def start_test(m: Message):
     name_map = {
         "🧪 Jägermeister": "jager",
         "🥃 Виски": "whisky",
-        "🧊 Водка": "vodka",
+        "🧊 Водка": "vodka"
     }
     name = name_map[m.text]
     USER_STATE[m.from_user.id] = {"name": name, "step": 1, "score": 0}
@@ -676,6 +679,7 @@ async def ask(m: Message):
     st = USER_STATE[m.from_user.id]
     qset = QUESTIONS[st["name"]]
     step = st["step"]
+
     if step > len(qset):
         score = st['score']
         total = len(qset)
@@ -691,9 +695,12 @@ async def ask(m: Message):
                        reply_markup=ReplyKeyboardRemove())
         USER_STATE.pop(m.from_user.id, None)
         return
+
     q, variants, correct = qset[step]
+    shuffled = variants[:]
+    shuffle(shuffled)
     st["correct"] = correct
-    await m.answer(f"Вопрос {step}: {q}", reply_markup=kb(*variants, width=1))
+    await m.answer(f"Вопрос {step}: {q}", reply_markup=kb(*shuffled, width=1))
 
 @tests_router.message(lambda m: m.from_user.id in USER_STATE)
 async def test_answer(m: Message):
@@ -705,6 +712,7 @@ async def test_answer(m: Message):
         await m.answer(f"❌ Неверно. Правильный ответ: {st['correct']}")
     st["step"] += 1
     await ask(m)
+
 
 @dp.message(F.photo)
 async def get_file_id(m: Message):
