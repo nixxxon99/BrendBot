@@ -281,15 +281,94 @@ async def srebryanka(m: Message):
         )
     )
 
+@vodka_router.message(F.text == "Reyka")
+async def reyka(m: Message):
+    await m.answer_photo(
+        photo="AgACAgIAAxkBAAILCWg8EVlyH6R2QScf7Q4nZzXoKgw4AAKG9zEbPHPgSUK7bfwT0QdLAQADAgADbQADNgQ",  
+        caption=(
+            "<b>Reyka</b>\n"
+            "• Премиальная водка из Исландии\n"
+            "• Изготавливается из чистейшей родниковой воды\n"
+            "• Перегоняется в медных аламбиках Carter-Head\n"
+            "• Фильтруется через лаву вулкана\n"
+            "• Аромат: мягкий, чистый, с намёком на минералы\n"
+            "• Вкус: гладкий, с лёгкой сладостью и нотками перца\n"
+            "• Крепость: 40 % ABV\n"
+            "• Прекрасно подходит для чистого употребления и коктейлей\n"
+            "• Часто ассоциируется с экологичностью и натуральностью"
+        )
+    )
     
+@vodka_router.message(F.text == "Finlandia")
+async def finlandia(m: Message):
+    await m.answer_photo(
+        photo="AgACAgIAAxkBAAILC2g8Eli-TYUT9EM8fzglAi5soVNhAAKJ9zEbPHPgSekXdAio1hxGAQADAgADeQADNgQЬ",
+        caption=(
+            "<b>Finlandia</b>\n"
+            "• Всемирно известная водка из Финляндии\n"
+            "• Производится из шести рядного ячменя и чистейшей ледниковой воды\n"
+            "• Перегоняется более 200 раз для исключительной чистоты\n"
+            "• Аромат: нейтральный, слегка злаковый\n"
+            "• Вкус: гладкий, холодный, мягкий\n"
+            "• Крепость: 40 % ABV\n"
+            "• Идеальна в шотах, коктейлях или с лёгкой закуской\n"
+            "• Символ северной чистоты и минимализма\n"
+            "• Доступна в разных вариантах: Classic, Lime, Grapefruit и др."
+        )
+    )
+
+@vodka_router.message(F.text == "Зелёная марка")
+async def zelenaya_marka(m: Message):
+    await m.answer_photo(
+        photo="AgACAgIAAxkBAAILB2g8EThJMJe1UMamIxOOc_dAAnWJAAKD9zEbPHPgSRx1MKEz6FkVAQADAgADeAADNgQ",  
+        caption=(
+            "<b>Зелёная марка</b>\n"
+            "• Традиционная российская водка\n"
+            "• Производится с использованием ржаного спирта и родниковой воды\n"
+            "• Сбалансированный вкус с лёгкой зерновой нотой\n"
+            "• Аромат: мягкий, хлебный\n"
+            "• Крепость: 40 % ABV\n"
+            "• Идеально подходит для классических застолий\n"
+            "• Линейка включает: Классическая, Пшеничная, Сибирская, Особая и др.\n"
+            "• Упаковка оформлена в винтажном стиле — отсылка к традициям\n"
+            "• Одна из самых узнаваемых марок в РФ и СНГ"
+        )
+    )
 
 
+@vodka_router.message(F.text == "Талка")
+async def talka(m: Message):
+    await m.answer_photo(
+        photo="AgACAgIAAxkBAAILDWg8EwSC0zkdPOWDiuPJwDjZnD6-AAKO9zEbPHPgSVVZcdKwdwxDAQADAgADeQADNgQ",
+        caption=(
+            "<b>Талка</b>\n"
+            "• Натуральная водка из Сибири\n"
+            "• Производится из талой воды и спирта класса «Люкс»\n"
+            "• Аромат: нейтральный, лёгкий\n"
+            "• Вкус: мягкий, чистый, с коротким финишем\n"
+            "• Крепость: 40 % ABV\n"
+            "• Природная тематика подчёркивается снежным дизайном бутылки\n"
+            "• Подходит для подачи в чистом виде и для настоек\n"
+            "• Часто выбирается потребителями за натуральность и мягкость"
+        )
+    )
 
-
-
-
-
-
+@vodka_router.message(F.text == "Русский Стандарт")
+async def russkiy_standart(m: Message):
+    await m.answer_photo(
+        photo="AgACAgIAAxkBAAILD2g8EzK_RPkeZPk2_gPWpB5xh_4CAAKP9zEbPHPgSWZgm1smh6zxAQADAgADeQADNgQ", 
+        caption=(
+            "<b>Русский Стандарт</b>\n"
+            "• Один из самых узнаваемых российских брендов водки\n"
+            "• Производится в Санкт-Петербурге по рецепту Менделеева\n"
+            "• Используется озёрная вода Ладоги и спирт «Люкс»\n"
+            "• Аромат: чистый, слегка зерновой\n"
+            "• Вкус: сбалансированный, мягкий, с легкой маслянистостью\n"
+            "• Крепость: 40 % ABV\n"
+            "• Часто подаётся охлаждённой к русской кухне\n"
+            "• Идеальна как в чистом виде, так и в коктейлях"
+        )
+    )
 
     
 
