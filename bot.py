@@ -475,6 +475,40 @@ async def staropramen(m: Message):
         )
     )
 
+WINE_KB = kb(
+    "Mateus Rosé", "Undurraga Sauvignon Blanc",
+    "Devil’s Rock Riesling", "Назад", width=1
+)
+
+wine_router = Router()
+
+@wine_router.message(F.text == "🍷 Вино")
+async def wine_menu(m: Message):
+    await m.answer("🍷 Выбери вино:", reply_markup=WINE_KB)
+
+@wine_router.message(F.text == "Назад")
+async def wine_back(m: Message):
+    await m.answer("Главное меню", reply_markup=MAIN_KB)
+
+@wine_router.message(F.text == "Mateus Rosé")
+async def mateus_rose(m: Message):
+    await m.answer_photo(
+        photo="AgACAgIAAxkBAAILUGg8Gx2S1sAohmNgv870lc1VvUdaAALC9zEbPHPgSZwxOkkyUzl2AQADAgADeQADNgQ",
+        caption=(
+            "<b>Mateus Original Rosé</b>\n"
+            "• Лёгкое полусухое розовое вино из Португалии\n"
+            "• Сорт винограда: Baga и другие португальские автохтоны\n"
+            "• Цвет: светло-розовый, с лёгким блеском\n"
+            "• Аромат: клубника, малина, цветочные тона\n"
+            "• Вкус: свежий, фруктовый, сбалансированный\n"
+            "• Крепость: 11 % ABV\n"
+            "• Подача: охлаждённым, идеально летом\n"
+            "• Подходит к лёгким закускам, салатам и морепродуктам\n"
+            "• Узнаваемая пузатая бутылка — символ бренда\n"
+            "• Отличный выбор для новичков и лёгких вечеринок"
+        )
+    )
+
 
 tests_router = Router()
 TESTS_MENU_KB = kb("🧪 Тест по Jägermeister", "Назад")
@@ -526,5 +560,8 @@ async def test_answer(m: Message):
 async def get_file_id(m: Message):
     await m.answer(f"✅ Получен file_id:\n<code>{m.photo[-1].file_id}</code>")
 
-dp.include_routers(main_router, whisky_router, tests_router, vodka_router, beer_router )
+dp.include_routers(main_router, whisky_router, vodka_router, beer_router, wine_router, tests_router)
+
+
+
 
