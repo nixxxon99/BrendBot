@@ -248,7 +248,22 @@ async def tullamore_honey(m: Message):
         )
     )
 
+# ——— Клавиатура водки ———
+VODKA_KB = kb(
+    "Серебрянка", "Reyka", "Finlandia", "Зелёная марка",
+    "Талка", "Русский стандарт", "Назад", width=2
+)
+
 vodka_router = Router()
+
+@vodka_router.message(F.text == "🧊 Водка")
+async def vodka_menu(m: Message):
+    await m.answer("🧊 Выбери бренд водки:", reply_markup=VODKA_KB)
+
+@vodka_router.message(F.text == "Назад")
+async def vodka_back(m: Message):
+    await m.answer("Главное меню", reply_markup=MAIN_KB)
+
 @vodka_router.message(F.text == "Серебрянка")
 async def srebryanka(m: Message):
     await m.answer_photo(
@@ -265,6 +280,8 @@ async def srebryanka(m: Message):
             "• Идеальна в паре с солёными закусками и мясом"
         )
     )
+
+    
 
 
 
