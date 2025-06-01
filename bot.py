@@ -602,7 +602,8 @@ async def chale_de_sud(m: Message):
             "• Часто ассоциируется с летними вечеринками\n"
             "• Привлекательный внешний вид бутылки\n"
             "• Хороший выбор для новичков и поклонников сладких вин"
-
+        )
+    )
       jager_router = Router()
 
 @jager_router.message(F.text == "Jägermeister")
