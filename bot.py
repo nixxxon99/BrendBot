@@ -370,7 +370,39 @@ async def russkiy_standart(m: Message):
         )
     )
 
-    
+beer_router = Router()
+
+BEER_KB = kb(
+    "Paulaner", "Blue Moon",
+    "London Pride", "Coors",
+    "Staropramen", "Назад",
+    width=2
+)
+
+@beer_router.message(F.text == "🍺 Пиво")
+async def beer_menu(m: Message):
+    await m.answer("🍺 Выбери бренд пива:", reply_markup=BEER_KB)
+
+@beer_router.message(F.text == "Назад")
+async def beer_back(m: Message):
+    await m.answer("Главное меню", reply_markup=MAIN_KB)
+
+@beer_router.message(F.text == "Paulaner")
+async def paulaner(m: Message):
+    await m.answer_photo(
+        photo="AgACAgIAAxkBAAILKmg8FzKSP73SszDZhdcxRRRWag1hAAKl9zEbPHPgSSyVatusTBp3AQADAgADeQADNgQ",
+        caption=(
+            "<b>Paulaner</b>\n"
+            "• Знаменитое немецкое пиво с историей более 400 лет\n"
+            "• Производится в Мюнхене, Германия\n"
+            "• Популярные стили: Hefe-Weißbier, Münchner Hell, Oktoberfest Bier\n"
+            "• Вкус: насыщенный, с нотками банана, гвоздики, солода\n"
+            "• Отличается мягкостью и натуральным брожением\n"
+            "• Отлично сочетается с колбасками, курицей и сыром\n"
+            "• Поставляется в бутылках и кегах\n"
+            "• Один из официальных участников Октоберфеста"
+        )
+    )    
 
 tests_router = Router()
 TESTS_MENU_KB = kb("🧪 Тест по Jägermeister", "Назад")
@@ -422,5 +454,5 @@ async def test_answer(m: Message):
 async def get_file_id(m: Message):
     await m.answer(f"✅ Получен file_id:\n<code>{m.photo[-1].file_id}</code>")
 
-dp.include_routers(main_router, whisky_router, tests_router, vodka_router)
+dp.include_routers(main_router, whisky_router, tests_router, vodka_router, beer_router )
 
