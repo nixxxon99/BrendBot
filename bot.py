@@ -246,8 +246,9 @@ async def tullamore_honey(m: Message):
             "• Стильная бутылка с тиснением\n"
             "• Отличный выбор для женской аудитории и новичков"
         )
-vodka_router = Router()
+    )
 
+vodka_router = Router()
 @vodka_router.message(F.text == "Серебрянка")
 async def srebryanka(m: Message):
     await m.answer_photo(
