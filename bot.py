@@ -232,7 +232,7 @@ async def tullamore_dew(m: Message):
 @whisky_router.message(F.text == "Tullamore D.E.W. Honey")
 async def tullamore_honey(m: Message):
     await m.answer_photo(
-        photo="вставь_сюда_file_id",  # ← сюда вставь свой file_id
+        photo="AgACAgIAAxkBAAIG_2g4qxyZA7ZsneXEwpn9IZwP00efAAJn9TEb1P3ISSXBLkMW4PngAQADAgADeAADNgQ",  # ← сюда вставь свой file_id
         caption=(
             "<b>Tullamore D.E.W. Honey</b>\n"
             "• Ирландский виски ликёр на основе оригинального Tullamore D.E.W.\n"
@@ -249,6 +249,23 @@ async def tullamore_honey(m: Message):
         parse_mode="HTML"
     )
 
+@vodka_router.message(F.text == "Серебрянка")
+async def srebryanka(m: Message):
+    await m.answer_photo(
+        photo="AgACAgIAAxkBAAIK-Gg8CRgDjmxfkUP-Ui86uo8Lm4OSAAJS9zEbPHPgSVUkEXccwFmIAQADAgADeQADNgQ",
+        caption=(
+            "<b>Серебрянка</b>\n"
+            "• Казахстанская водка\n"
+            "• Отличается мягким вкусом и чистым послевкусием\n"
+            "• Фильтрация через серебро — отсюда и название\n"
+            "• Прекрасно подходит для классических застолий\n"
+            "• Крепость: 40 %\n"
+            "• Форматы: 0.5 и 0.7 л\n"
+            "• Представлена в трёх вариантах: Классическая, Лайт (37,5%) и Rey\n"
+             • Идеальна в паре с солёными закусками и мясом"
+            
+        )
+    )
 
 
 
