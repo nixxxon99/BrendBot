@@ -605,6 +605,8 @@ async def chale_de_sud(m: Message):
         )
     )
 
+tests_router = Router()
+
 TESTS_MENU_KB = kb(
     "🧪 Jägermeister", "🥃 Виски", "🧊 Водка",
     "🍺 Пиво", "🍷 Вино", "Назад", width=2
