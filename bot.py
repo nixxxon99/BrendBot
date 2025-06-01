@@ -611,9 +611,10 @@ from aiogram.types import ReplyKeyboardRemove
 tests_router = Router()
 
 TESTS_MENU_KB = kb(
-    "🧪 Jägermeister", "🥃 Виски", "🧊 Водка",
-    "🍺 Пиво", "🍷 Вино", "Назад", width=2
+    "Тест: Jägermeister", "Тест: Виски", "Тест: Водка",
+    "Тест: Пиво", "Тест: Вино", "Назад", width=2
 )
+
 
 QUESTIONS = {
     "jager": {
@@ -660,16 +661,22 @@ USER_STATE: dict[int, dict] = {}
 async def tests_menu(m: Message):
     await m.answer("Выберите категорию:", reply_markup=TESTS_MENU_KB)
 
-@tests_router.message(lambda m: m.text in ["🧪 Jägermeister", "🥃 Виски", "🧊 Водка"])
+@tests_router.message(lambda m: m.text in [
+    "Тест: Jägermeister", "Тест: Виски", "Тест: Водка",
+    "Тест: Пиво", "Тест: Вино"
+])
 async def start_test(m: Message):
     name_map = {
-        "🧪 Jägermeister": "jager",
-        "🥃 Виски": "whisky",
-        "🧊 Водка": "vodka"
+        "Тест: Jägermeister": "jager",
+        "Тест: Виски": "whisky",
+        "Тест: Водка": "vodka",
+        "Тест: Пиво": "beer",
+        "Тест: Вино": "wine"
     }
     name = name_map[m.text]
     USER_STATE[m.from_user.id] = {"name": name, "step": 1, "score": 0}
     await ask(m)
+
 
 @tests_router.message(lambda m: m.text == "Назад")
 async def back_to_menu(m: Message):
