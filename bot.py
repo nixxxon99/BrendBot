@@ -607,7 +607,7 @@ async def chale_de_sud(m: Message):
     
 jager_router = Router()
 
-@jager_router.message(F.text == "Jägermeister")
+@jager_router.message(F.text == "🦌 Ягермейстер")
 async def jagermeister_info(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIMG2g8Lf1fleLtxA30kh_bN-YFxQx9AAKM-DEbPHPgSXiVPEBRiD1GAQADAgADeAADNgQ",  
