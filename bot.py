@@ -247,6 +247,8 @@ async def tullamore_honey(m: Message):
             "• Отличный выбор для женской аудитории и новичков"
         ),
         parse_mode="HTML"
+        vodka_router = Router()
+    
     )
 
 @vodka_router.message(F.text == "Серебрянка")
