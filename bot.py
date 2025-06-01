@@ -602,8 +602,27 @@ async def chale_de_sud(m: Message):
             "• Часто ассоциируется с летними вечеринками\n"
             "• Привлекательный внешний вид бутылки\n"
             "• Хороший выбор для новичков и поклонников сладких вин"
+
+      jager_router = Router()
+
+@jager_router.message(F.text == "Jägermeister")
+async def jagermeister_info(m: Message):
+    await m.answer_photo(
+        photo="AgACAgIAAxkBAAIMG2g8Lf1fleLtxA30kh_bN-YFxQx9AAKM-DEbPHPgSXiVPEBRiD1GAQADAgADeAADNgQ",  
+        caption=(
+            "<b>Jägermeister</b>\n"
+            "• Немецкий травяной ликёр с крепостью 35 %\n"
+            "• Производится с 1935 года в Вольфенбюттеле\n"
+            "• Состоит из 56 трав, корней и специй\n"
+            "• Настойка выдерживается 12 месяцев в дубовых бочках\n"
+            "• Аромат: пряный, травяной, с нотами аниса и цитруса\n"
+            "• Вкус: насыщенный, горьковатый, слегка сладкий\n"
+            "• Классическая подача — шот, охлаждённый до -18°C\n"
+            "• Отличный ингредиент для коктейлей (Jägerbomb и др.)\n"
+            "• Логотип — олень с сияющим крестом между рогами"
         )
     )
+      
 
 from random import shuffle
 from aiogram.types import ReplyKeyboardRemove
@@ -749,7 +768,7 @@ async def test_answer(m: Message):
 async def get_file_id(m: Message):
     await m.answer(f"✅ Получен file_id:\n<code>{m.photo[-1].file_id}</code>")
 
-dp.include_routers(main_router, whisky_router, vodka_router, beer_router, wine_router, tests_router)
+dp.include_routers(main_router, whisky_router, vodka_router, beer_router, wine_router, tests_router,jager_router)
 
 
 
