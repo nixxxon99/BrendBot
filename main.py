@@ -38,3 +38,7 @@ async def main():
 if __name__ == "__main__":
     loop.run_until_complete(main())
 
+@приложение.route("/", methods=["GET"])
+def ping():
+    return "Bot is alive", 200
+
