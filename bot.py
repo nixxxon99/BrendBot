@@ -743,20 +743,30 @@ async def ask(m: Message):
             remark = "👍 Отличный результат!"
         else:
             remark = "🏆 Ты — эксперт!"
-        await m.answer(f"Готово! Правильных ответов: {score}/{total}\n{remark}",
-                       reply_markup=ReplyKeyboardRemove())
+        await m.answer(
+            f"Готово! Правильных ответов: {score}/{total}\n{remark}",
+            reply_markup=ReplyKeyboardRemove()
+        )
         USER_STATE.pop(m.from_user.id, None)
+        await m.answer("Выберите категорию:", reply_markup=MAIN_KB)
         return
 
     q, variants, correct = qset[step]
     shuffled = variants[:]
     shuffle(shuffled)
     st["correct"] = correct
-    await m.answer(f"Вопрос {step}: {q}", reply_markup=kb(*shuffled, width=1))
+    await m.answer(
+        f"Вопрос {step}: {q}",
+        reply_markup=kb(*(shuffled + ["Главное меню"]), width=1)
+    )
 
 @tests_router.message(lambda m: m.from_user.id in USER_STATE)
 async def test_answer(m: Message):
     st = USER_STATE[m.from_user.id]
+    if m.text == "Главное меню":
+        USER_STATE.pop(m.from_user.id, None)
+        await m.answer("Вы вернулись в главное меню", reply_markup=MAIN_KB)
+        return
     if m.text == st["correct"]:
         st["score"] += 1
         await m.answer("✅ Верно!")
