@@ -23,8 +23,16 @@ def kb(*labels: str, width: int = 2) -> ReplyKeyboardMarkup:
     builder.adjust(width)
     return builder.as_markup(resize_keyboard=True)
 
-MAIN_KB = kb("🥃 Виски", "🧊 Водка", "🍺 Пиво", "🍷 Вино",
-             "📋 Тесты", "🍹 Коктейли", "🦌 Ягермейстер")
+MAIN_KB = kb(
+    "🥃 Виски",
+    "🧊 Водка",
+    "🍺 Пиво",
+    "🍷 Вино",
+    "🔍 Поиск",
+    "📋 Тесты",
+    "🍹 Коктейли",
+    "🦌 Ягермейстер"
+)
 
 main_router = Router()
 
@@ -624,7 +632,28 @@ async def jagermeister_info(m: Message):
             "• Логотип — олень с сияющим крестом между рогами"
         )
     )
-      
+
+
+search_router = Router()
+SEARCH_USERS: set[int] = set()
+
+@search_router.message(F.text == "🔍 Поиск")
+async def search_prompt(m: Message):
+    SEARCH_USERS.add(m.from_user.id)
+    await m.answer(
+        "Введите название напитка:", reply_markup=ReplyKeyboardRemove()
+    )
+
+
+@search_router.message(lambda m: m.from_user.id in SEARCH_USERS)
+async def search_process(m: Message):
+    SEARCH_USERS.discard(m.from_user.id)
+    text = m.text.lower()
+    if "санч" in text or "sanch" in text:
+        await el_sanches(m)
+    else:
+        await m.answer("Ничего не найдено", reply_markup=MAIN_KB)
+
 
 from random import shuffle
 from aiogram.types import ReplyKeyboardRemove
@@ -780,7 +809,16 @@ async def test_answer(m: Message):
 async def get_file_id(m: Message):
     await m.answer(f"✅ Получен file_id:\n<code>{m.photo[-1].file_id}</code>")
 
-dp.include_routers(main_router, whisky_router, vodka_router, beer_router, wine_router, tests_router,jager_router)
+dp.include_routers(
+    main_router,
+    whisky_router,
+    vodka_router,
+    beer_router,
+    wine_router,
+    search_router,
+    tests_router,
+    jager_router,
+)
 
 
 
