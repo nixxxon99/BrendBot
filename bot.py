@@ -780,7 +780,86 @@ async def test_answer(m: Message):
 async def get_file_id(m: Message):
     await m.answer(f"✅ Получен file_id:\n<code>{m.photo[-1].file_id}</code>")
 
-dp.include_routers(main_router, whisky_router, vodka_router, beer_router, wine_router, tests_router,jager_router)
+alias_router = Router()
+
+ALIASES = {
+    "эль санчес": el_sanches,
+    "el sanchez": el_sanches,
+    "шале де сюд": chale_de_sud,
+    "chalet des sud": chale_de_sud,
+    "mateus rosé": mateus_rose,
+    "mateus rose": mateus_rose,
+    "матеус розе": mateus_rose,
+    "undurraga sauvignon blanc": undurraga_sb,
+    "ундурага совиньон блан": undurraga_sb,
+    "devil’s rock riesling": devils_rock_riesling,
+    "devils rock riesling": devils_rock_riesling,
+    "девилс рок рислинг": devils_rock_riesling,
+    "piccola nostra": piccola_nostra,
+    "пиккола ностра": piccola_nostra,
+    "серебрянка": srebryanka,
+    "serebryanka": srebryanka,
+    "reyka": reyka,
+    "рейка": reyka,
+    "finlandia": finlandia,
+    "финляндия": finlandia,
+    "зелёная марка": zelenaya_marka,
+    "zelyonaya marka": zelenaya_marka,
+    "талка": talka,
+    "talka": talka,
+    "русский стандарт": russkiy_standart,
+    "russian standard": russkiy_standart,
+    "paulaner": paulaner,
+    "пауланер": paulaner,
+    "blue moon": blue_moon,
+    "блю мун": blue_moon,
+    "london pride": london_pride,
+    "лондон прайд": london_pride,
+    "coors": coors,
+    "курс": coors,
+    "staropramen": staropramen,
+    "старопрамен": staropramen,
+    "monkey shoulder": monkey_shoulder,
+    "монки шолдер": monkey_shoulder,
+    "glenfiddich 12 years": glenfiddich_12,
+    "гленфиддик 12": glenfiddich_12,
+    "fire & cane": fire_and_cane,
+    "файр энд кейн": fire_and_cane,
+    "ipa experiment": ipa_experiment,
+    "ipa эксперимент": ipa_experiment,
+    "grant's classic": grants_classic,
+    "грантс классик": grants_classic,
+    "grant's summer orange": grants_summer_orange,
+    "грантс саммер оранж": grants_summer_orange,
+    "grant's winter dessert": grants_winter_dessert,
+    "грантс винтер десерт": grants_winter_dessert,
+    "grant's tropical fiesta": grants_tropical_fiesta,
+    "грантс тропикал фиеста": grants_tropical_fiesta,
+    "tullamore d.e.w.": tullamore_dew,
+    "tullamore dew": tullamore_dew,
+    "тулламор дью": tullamore_dew,
+    "tullamore d.e.w. honey": tullamore_honey,
+    "tullamore honey": tullamore_honey,
+    "тулламор хани": tullamore_honey,
+    "jägermeister": jagermeister_info,
+    "jagermeister": jagermeister_info,
+    "ягермейстер": jagermeister_info,
+}
+
+@alias_router.message(lambda m: m.text and m.text.lower() in ALIASES)
+async def alias_handler(m: Message):
+    await ALIASES[m.text.lower()](m)
+
+dp.include_routers(
+    main_router,
+    whisky_router,
+    vodka_router,
+    beer_router,
+    wine_router,
+    tests_router,
+    jager_router,
+    alias_router,
+)
 
 
 
