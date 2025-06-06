@@ -62,6 +62,11 @@ def track_brand(name: str):
         return wrapper
     return decorator
 
+def clear_user_state(user_id: int) -> None:
+    """Reset search and quiz states for given user."""
+    SEARCH_ACTIVE.discard(user_id)
+    USER_STATE.pop(user_id, None)
+
 def kb(*labels: str, width: int = 2) -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     for text in labels:
@@ -90,10 +95,12 @@ brand_menu_router = Router()
 
 @main_router.message(CommandStart())
 async def cmd_start(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("Привет! Выбери категорию:", reply_markup=MAIN_KB)
 
 @main_router.message(F.text == "Моя статистика")
 async def show_stats(m: Message):
+    clear_user_state(m.from_user.id)
     st = get_stats(m.from_user.id)
     brands = ", ".join(st["brands"]) if st["brands"] else "—"
     last = st["last"] or "—"
@@ -107,10 +114,12 @@ async def show_stats(m: Message):
 
 @main_router.message(F.text == "Меню брендов")
 async def show_brand_menu(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("Выберите категорию:", reply_markup=BRAND_MENU_KB)
 
 @brand_menu_router.message(F.text == "Назад")
 async def brand_menu_back(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("Главное меню", reply_markup=MAIN_KB)
 
 WHISKY_KB = kb(
@@ -125,10 +134,12 @@ whisky_router = Router()
 
 @whisky_router.message(F.text == "🥃 Виски")
 async def whisky_menu(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("🥃 Выбери бренд виски:", reply_markup=WHISKY_KB)
 
 @whisky_router.message(F.text == "Назад к категориям")
 async def whisky_back(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
 @whisky_router.message(F.text == "Monkey Shoulder")
@@ -349,10 +360,12 @@ vodka_router = Router()
 
 @vodka_router.message(F.text == "🧊 Водка")
 async def vodka_menu(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("🧊 Выбери бренд водки:", reply_markup=VODKA_KB)
 
 @vodka_router.message(F.text == "Назад к категориям")
 async def vodka_back(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
 @vodka_router.message(F.text == "Серебрянка")
@@ -478,10 +491,12 @@ BEER_KB = kb(
 
 @beer_router.message(F.text == "🍺 Пиво")
 async def beer_menu(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("🍺 Выбери бренд пива:", reply_markup=BEER_KB)
 
 @beer_router.message(F.text == "Назад к категориям")
 async def beer_back(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
 @beer_router.message(F.text == "Paulaner")
@@ -587,14 +602,16 @@ wine_router = Router()
 
 @wine_router.message(F.text == "🍷 Вино")
 async def wine_menu(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("🍷 Выбери вино:", reply_markup=WINE_KB)
 
 @wine_router.message(F.text == "Назад к категориям")
 async def wine_back(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
-@wine_router.message(F.text == "Mateus Rosé")
-@track_brand("Mateus Rosé")
+@wine_router.message(F.text == "Mateus Original Rosé")
+@track_brand("Mateus Original Rosé")
 async def mateus_rose(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILUGg8Gx2S1sAohmNgv870lc1VvUdaAALC9zEbPHPgSZwxOkkyUzl2AQADAgADeQADNgQ",
@@ -718,6 +735,7 @@ jager_router = Router()
 @jager_router.message(F.text == "🦌 Ягермейстер")
 @track_brand("Jägermeister")
 async def jagermeister_info(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIMG2g8Lf1fleLtxA30kh_bN-YFxQx9AAKM-DEbPHPgSXiVPEBRiD1GAQADAgADeAADNgQ",  
         caption=(
@@ -941,6 +959,7 @@ USER_STATE: dict[int, dict] = {}
 
 @tests_router.message(F.text == "📋 Тесты")
 async def tests_menu(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("Выберите категорию:", reply_markup=TESTS_MENU_KB)
 
 @tests_router.message(lambda m: m.text in [
@@ -955,6 +974,7 @@ async def start_test(m: Message):
         "Тест: Пиво": "beer",
         "Тест: Вино": "wine"
     }
+    clear_user_state(m.from_user.id)
     name = name_map[m.text]
     USER_STATE[m.from_user.id] = {"name": name, "step": 1, "score": 0}
     await ask(m)
@@ -962,6 +982,7 @@ async def start_test(m: Message):
 
 @tests_router.message(lambda m: m.text == "Назад к меню")
 async def back_to_menu(m: Message):
+    clear_user_state(m.from_user.id)
     await m.answer("Главное меню", reply_markup=MAIN_KB)
 
 async def ask(m: Message):
