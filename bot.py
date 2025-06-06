@@ -24,25 +24,38 @@ def kb(*labels: str, width: int = 2) -> ReplyKeyboardMarkup:
     return builder.as_markup(resize_keyboard=True)
 
 MAIN_KB = kb(
-    "🥃 Виски",
-    "🧊 Водка",
-    "🍺 Пиво",
-    "🍷 Вино",
+    "Меню брендов",
     "🔍 Поиск",
     "📋 Тесты",
     "🍹 Коктейли",
-    "🦌 Ягермейстер"
+    width=2
+)
+
+BRAND_MENU_KB = kb(
+    "🍷 Вино", "🧊 Водка",
+    "🥃 Виски", "🍺 Пиво",
+    "🦌 Ягермейстер", "Назад",
+    width=2
 )
 
 main_router = Router()
+brand_menu_router = Router()
 
 @main_router.message(CommandStart())
 async def cmd_start(m: Message):
     await m.answer("Привет! Выбери категорию:", reply_markup=MAIN_KB)
 
+@main_router.message(F.text == "Меню брендов")
+async def show_brand_menu(m: Message):
+    await m.answer("Выберите категорию:", reply_markup=BRAND_MENU_KB)
+
+@brand_menu_router.message(F.text == "Назад")
+async def brand_menu_back(m: Message):
+    await m.answer("Главное меню", reply_markup=MAIN_KB)
+
 WHISKY_KB = kb(
-    "Monkey Shoulder", "Glenfiddich 12 Years", "Fire & Cane",
-    "IPA Experiment", "Grant's Classic", "Grant's Summer Orange",
+    "Monkey Shoulder", "Glenfiddich 12 Years", "Glenfiddich Fire & Cane",
+    "Glenfiddich IPA", "Grant's Classic", "Grant's Summer Orange",
     "Grant's Winter Dessert", "Grant's Tropical Fiesta",
     "Tullamore D.E.W.", "Tullamore D.E.W. Honey", "Назад",
     width=2
@@ -56,7 +69,7 @@ async def whisky_menu(m: Message):
 
 @whisky_router.message(F.text == "Назад")
 async def whisky_back(m: Message):
-    await m.answer("Главное меню", reply_markup=MAIN_KB)
+    await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
 @whisky_router.message(F.text == "Monkey Shoulder")
 async def monkey_shoulder(m: Message):
@@ -96,7 +109,7 @@ async def glenfiddich_12(m: Message):
         parse_mode="HTML"
     )
 
-@whisky_router.message(F.text == "Fire & Cane")
+@whisky_router.message(F.text == "Glenfiddich Fire & Cane")
 async def fire_and_cane(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIG2mg4ncuOjEqivJgv27H62zK4XOvFAAIK9TEb1P3ISXHpOhsLyQ4DAQADAgADeQADNgQ",  # ← вставь свой file_id
@@ -116,12 +129,12 @@ async def fire_and_cane(m: Message):
         parse_mode="HTML"
     )
 
-@whisky_router.message(F.text == "IPA Experiment")
+@whisky_router.message(F.text == "Glenfiddich IPA")
 async def ipa_experiment(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIG52g4npbaJO1p_0s7aVNpQ5_r9nkEAAIT9TEb1P3ISRjGBYkQaU3hAQADAgADeQADNgQ",  # ← вставь свой file_id
         caption=(
-            "<b>Glenfiddich IPA Experiment</b>\n"
+            "<b>Glenfiddich IPA</b>\n"
             "• Первая в мире коллаборация виски и крафтового IPA-пива\n"
             "• Выдержан в бочках из-под индийского светлого эля\n"
             "• Аромат: хмель, свежие травы, яблоко, груша\n"
@@ -270,7 +283,7 @@ async def vodka_menu(m: Message):
 
 @vodka_router.message(F.text == "Назад")
 async def vodka_back(m: Message):
-    await m.answer("Главное меню", reply_markup=MAIN_KB)
+    await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
 @vodka_router.message(F.text == "Серебрянка")
 async def srebryanka(m: Message):
@@ -393,7 +406,7 @@ async def beer_menu(m: Message):
 
 @beer_router.message(F.text == "Назад")
 async def beer_back(m: Message):
-    await m.answer("Главное меню", reply_markup=MAIN_KB)
+    await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
 @beer_router.message(F.text == "Paulaner")
 async def paulaner(m: Message):
@@ -497,7 +510,7 @@ async def wine_menu(m: Message):
 
 @wine_router.message(F.text == "Назад")
 async def wine_back(m: Message):
-    await m.answer("Главное меню", reply_markup=MAIN_KB)
+    await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
 @wine_router.message(F.text == "Mateus Rosé")
 async def mateus_rose(m: Message):
@@ -646,11 +659,11 @@ BRANDS: dict[str, tuple[callable, list[str]]] = {
     "Glenfiddich 12 Years": (glenfiddich_12, [
         "glenfiddich 12", "glen", "гленфиддик 12", "глен", "glenfiddich"
     ]),
-    "Fire & Cane": (fire_and_cane, [
-        "fire & cane", "fire and cane", "фаер кейн", "fire cane", "гленфиддик фаер", "фаер"
+    "Glenfiddich Fire & Cane": (fire_and_cane, [
+        "glenfiddich fire & cane", "fire & cane", "fire and cane", "фаер кейн", "fire cane", "гленфиддик фаер", "фаер"
     ]),
-    "IPA Experiment": (ipa_experiment, [
-        "ipa experiment", "ipa", "эксперимент", "ипа"
+    "Glenfiddich IPA": (ipa_experiment, [
+        "glenfiddich ipa", "ipa experiment", "ipa", "эксперимент", "ипа"
     ]),
     "Grant's Classic": (grants_classic, [
         "grant's classic", "grants classic", "грантс классик", "грантс"
@@ -925,6 +938,7 @@ dp.include_routers(
     search_router,
     tests_router,
     jager_router,
+    brand_menu_router,
 )
 
 
