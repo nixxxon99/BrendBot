@@ -637,6 +637,40 @@ async def jagermeister_info(m: Message):
 search_router = Router()
 SEARCH_USERS: set[int] = set()
 
+# Keywords for brand search mapped to handler functions
+SEARCH_HANDLERS: list[tuple[str, callable]] = [
+    ("tullamore d.e.w. honey", tullamore_honey),
+    ("tullamore d.e.w.", tullamore_dew),
+    ("grant's summer orange", grants_summer_orange),
+    ("grant's winter dessert", grants_winter_dessert),
+    ("grant's tropical fiesta", grants_tropical_fiesta),
+    ("grant's classic", grants_classic),
+    ("monkey shoulder", monkey_shoulder),
+    ("glenfiddich 12 years", glenfiddich_12),
+    ("fire & cane", fire_and_cane),
+    ("ipa experiment", ipa_experiment),
+    ("серебрянка", srebryanka),
+    ("reyka", reyka),
+    ("finlandia", finlandia),
+    ("зелёная марка", zelenaya_marka),
+    ("талка", talka),
+    ("русский стандарт", russkiy_standart),
+    ("paulaner", paulaner),
+    ("blue moon", blue_moon),
+    ("london pride", london_pride),
+    ("coors", coors),
+    ("staropramen", staropramen),
+    ("mateus original rosé", mateus_rose),
+    ("undurraga sauvignon blanc", undurraga_sb),
+    ("devil’s rock riesling", devils_rock_riesling),
+    ("piccola nostra", piccola_nostra),
+    ("эль санчес", el_sanches),
+    ("шале де сюд", chale_de_sud),
+    ("jagermeister", jagermeister_info),
+    ("ягермейстер", jagermeister_info),
+]
+
+
 @search_router.message(F.text == "🔍 Поиск")
 async def search_prompt(m: Message):
     SEARCH_USERS.add(m.from_user.id)
@@ -649,8 +683,10 @@ async def search_prompt(m: Message):
 async def search_process(m: Message):
     SEARCH_USERS.discard(m.from_user.id)
     text = m.text.lower()
-    if "санч" in text or "sanch" in text:
-        await el_sanches(m)
+    for key, handler in SEARCH_HANDLERS:
+        if key in text or text in key:
+            await handler(m)
+            break
     else:
         await m.answer("Ничего не найдено", reply_markup=MAIN_KB)
 
