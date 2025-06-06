@@ -593,8 +593,8 @@ async def wine_menu(m: Message):
 async def wine_back(m: Message):
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
-@wine_router.message(F.text == "Mateus Rosé")
-@track_brand("Mateus Rosé")
+@wine_router.message(F.text == "Mateus Original Rosé")
+@track_brand("Mateus Original Rosé")
 async def mateus_rose(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILUGg8Gx2S1sAohmNgv870lc1VvUdaAALC9zEbPHPgSZwxOkkyUzl2AQADAgADeQADNgQ",
