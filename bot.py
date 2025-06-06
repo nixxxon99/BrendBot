@@ -68,6 +68,10 @@ def clear_user_state(user_id: int) -> None:
     SEARCH_ACTIVE.discard(user_id)
     USER_STATE.pop(user_id, None)
 
+def normalize(text: str) -> str:
+    """Return lowercased text without spaces or punctuation for matching."""
+    return "".join(ch.lower() for ch in text if ch.isalnum())
+
 def kb(*labels: str, width: int = 2) -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     for text in labels:
@@ -845,6 +849,26 @@ BRANDS: dict[str, tuple[callable, list[str]]] = {
         "jagermeister", "ягермейстер", "ягер", "jager"
     ]),
 }
+# Map normalized brand aliases to canonical names
+ALIAS_MAP: dict[str, str] = {}
+for _name, (_, _aliases) in BRANDS.items():
+    ALIAS_MAP[normalize(_name)] = _name
+    for _a in _aliases:
+        ALIAS_MAP[normalize(_a)] = _name
+
+brand_lookup_router = Router()
+
+@brand_lookup_router.message(
+    lambda m: m.from_user.id not in SEARCH_ACTIVE
+    and m.from_user.id not in USER_STATE
+    and normalize(m.text) in ALIAS_MAP
+)
+async def show_brand(m: Message):
+    clear_user_state(m.from_user.id)
+    canonical = ALIAS_MAP[normalize(m.text)]
+    handler, _ = BRANDS[canonical]
+    await handler(m)
+
 
 CANONICAL_MAP = {name.lower(): name for name in BRANDS}
 
@@ -1046,6 +1070,7 @@ dp.include_routers(
     vodka_router,
     beer_router,
     wine_router,
+    brand_lookup_router,
     search_router,
     tests_router,
     jager_router,
