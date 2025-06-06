@@ -57,7 +57,7 @@ WHISKY_KB = kb(
     "Monkey Shoulder", "Glenfiddich 12 Years", "Glenfiddich Fire & Cane",
     "Glenfiddich IPA", "Grant's Classic", "Grant's Summer Orange",
     "Grant's Winter Dessert", "Grant's Tropical Fiesta",
-    "Tullamore D.E.W.", "Tullamore D.E.W. Honey", "Назад",
+    "Tullamore D.E.W.", "Tullamore D.E.W. Honey", "Назад к категориям",
     width=2
 )
 
@@ -67,7 +67,7 @@ whisky_router = Router()
 async def whisky_menu(m: Message):
     await m.answer("🥃 Выбери бренд виски:", reply_markup=WHISKY_KB)
 
-@whisky_router.message(F.text == "Назад")
+@whisky_router.message(F.text == "Назад к категориям")
 async def whisky_back(m: Message):
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
@@ -272,7 +272,7 @@ async def tullamore_honey(m: Message):
 
 VODKA_KB = kb(
     "Серебрянка", "Reyka", "Finlandia", "Зелёная марка",
-    "Талка", "Русский Стандарт", "Назад", width=2
+    "Талка", "Русский Стандарт", "Назад к категориям", width=2
 )
 
 vodka_router = Router()
@@ -281,7 +281,7 @@ vodka_router = Router()
 async def vodka_menu(m: Message):
     await m.answer("🧊 Выбери бренд водки:", reply_markup=VODKA_KB)
 
-@vodka_router.message(F.text == "Назад")
+@vodka_router.message(F.text == "Назад к категориям")
 async def vodka_back(m: Message):
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
@@ -396,7 +396,7 @@ beer_router = Router()
 BEER_KB = kb(
     "Paulaner", "Blue Moon",
     "London Pride", "Coors",
-    "Staropramen", "Назад",
+    "Staropramen", "Назад к категориям",
     width=2
 )
 
@@ -404,7 +404,7 @@ BEER_KB = kb(
 async def beer_menu(m: Message):
     await m.answer("🍺 Выбери бренд пива:", reply_markup=BEER_KB)
 
-@beer_router.message(F.text == "Назад")
+@beer_router.message(F.text == "Назад к категориям")
 async def beer_back(m: Message):
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
@@ -499,7 +499,7 @@ async def staropramen(m: Message):
 WINE_KB = kb(
     "Mateus Original Rosé", "Undurraga Sauvignon Blanc",
     "Devil’s Rock Riesling", "Piccola Nostra",
-    "Эль Санчес", "Шале де Сюд", "Назад", width=2
+    "Эль Санчес", "Шале де Сюд", "Назад к категориям", width=2
 )
 
 wine_router = Router()
@@ -508,7 +508,7 @@ wine_router = Router()
 async def wine_menu(m: Message):
     await m.answer("🍷 Выбери вино:", reply_markup=WINE_KB)
 
-@wine_router.message(F.text == "Назад")
+@wine_router.message(F.text == "Назад к категориям")
 async def wine_back(m: Message):
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
@@ -782,7 +782,7 @@ tests_router = Router()
 
 TESTS_MENU_KB = kb(
     "Тест: Jägermeister", "Тест: Виски", "Тест: Водка",
-    "Тест: Пиво", "Тест: Вино", "Назад", width=2
+    "Тест: Пиво", "Тест: Вино", "Назад к меню", width=2
 )
 
 
@@ -872,7 +872,7 @@ async def start_test(m: Message):
     await ask(m)
 
 
-@tests_router.message(lambda m: m.text == "Назад")
+@tests_router.message(lambda m: m.text == "Назад к меню")
 async def back_to_menu(m: Message):
     await m.answer("Главное меню", reply_markup=MAIN_KB)
 
