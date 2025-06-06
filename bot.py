@@ -57,6 +57,7 @@ def record_test_result(user_id: int, points: int) -> None:
 def track_brand(name: str):
     def decorator(func):
         async def wrapper(m: Message, *a, **kw):
+            kw.pop("bot", None)  # aiogram may inject bot kwarg
             record_brand_view(m.from_user.id, name)
             return await func(m, *a, **kw)
         return wrapper
