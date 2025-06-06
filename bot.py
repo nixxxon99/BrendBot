@@ -634,122 +634,136 @@ async def jagermeister_info(m: Message):
     )
 
 
+
+
 search_router = Router()
-SEARCH_USERS: dict[int, dict] = {}
+SEARCH_ACTIVE: set[int] = set()
 
-# Keywords for brand search mapped to handler functions
-SEARCH_HANDLERS: list[tuple[str, callable]] = [
-    ("tullamore d.e.w. honey", tullamore_honey),
-    ("tullamore d.e.w.", tullamore_dew),
-    ("grant's summer orange", grants_summer_orange),
-    ("grant's winter dessert", grants_winter_dessert),
-    ("grant's tropical fiesta", grants_tropical_fiesta),
-    ("grant's classic", grants_classic),
-    ("monkey shoulder", monkey_shoulder),
-    ("glenfiddich 12 years", glenfiddich_12),
-    ("fire & cane", fire_and_cane),
-    ("ipa experiment", ipa_experiment),
-    ("серебрянка", srebryanka),
-    ("reyka", reyka),
-    ("finlandia", finlandia),
-    ("зелёная марка", zelenaya_marka),
-    ("талка", talka),
-    ("русский стандарт", russkiy_standart),
-    ("paulaner", paulaner),
-    ("blue moon", blue_moon),
-    ("london pride", london_pride),
-    ("coors", coors),
-    ("staropramen", staropramen),
-    ("mateus original rosé", mateus_rose),
-    ("undurraga sauvignon blanc", undurraga_sb),
-    ("devil’s rock riesling", devils_rock_riesling),
-    ("piccola nostra", piccola_nostra),
-    ("эль санчес", el_sanches),
-    ("шале де сюд", chale_de_sud),
-    ("jagermeister", jagermeister_info),
-    ("ягермейстер", jagermeister_info),
-]
+BRANDS: dict[str, tuple[callable, list[str]]] = {
+    "Monkey Shoulder": (monkey_shoulder, [
+        "monkey shoulder", "monkey", "mon", "манки", "монки", "манкей", "манки шолдер"
+    ]),
+    "Glenfiddich 12 Years": (glenfiddich_12, [
+        "glenfiddich 12", "glen", "гленфиддик 12", "глен", "glenfiddich"
+    ]),
+    "Fire & Cane": (fire_and_cane, [
+        "fire & cane", "fire and cane", "фаер кейн", "fire cane", "гленфиддик фаер", "фаер"
+    ]),
+    "IPA Experiment": (ipa_experiment, [
+        "ipa experiment", "ipa", "эксперимент", "ипа"
+    ]),
+    "Grant's Classic": (grants_classic, [
+        "grant's classic", "grants classic", "грантс классик", "грантс"
+    ]),
+    "Grant's Summer Orange": (grants_summer_orange, [
+        "grant's summer orange", "summer orange", "грантс саммер", "грантс апельсин"
+    ]),
+    "Grant's Winter Dessert": (grants_winter_dessert, [
+        "grant's winter dessert", "winter dessert", "грантс десерт"
+    ]),
+    "Grant's Tropical Fiesta": (grants_tropical_fiesta, [
+        "grant's tropical fiesta", "tropical fiesta", "грантс тропик", "грантс фиеста"
+    ]),
+    "Tullamore D.E.W.": (tullamore_dew, [
+        "tullamore d.e.w.", "tullamore", "тулламор", "тулламор дью"
+    ]),
+    "Tullamore D.E.W. Honey": (tullamore_honey, [
+        "tullamore d.e.w. honey", "tullamore honey", "тулламор хани", "тулламор мед"
+    ]),
+    "Серебрянка": (srebryanka, [
+        "серебрянка", "serebryanka", "серебро"
+    ]),
+    "Reyka": (reyka, [
+        "reyka", "рейка"
+    ]),
+    "Finlandia": (finlandia, [
+        "finlandia", "финляндия", "финлянд"
+    ]),
+    "Зелёная марка": (zelenaya_marka, [
+        "зелёная марка", "зеленая марка", "zelenaya marka"
+    ]),
+    "Талка": (talka, [
+        "талка", "talka"
+    ]),
+    "Русский Стандарт": (russkiy_standart, [
+        "русский стандарт", "russkiy standart"
+    ]),
+    "Paulaner": (paulaner, [
+        "paulaner", "пауланер"
+    ]),
+    "Blue Moon": (blue_moon, [
+        "blue moon", "блю мун"
+    ]),
+    "London Pride": (london_pride, [
+        "london pride", "лондон прайд"
+    ]),
+    "Coors": (coors, [
+        "coors", "курс"
+    ]),
+    "Staropramen": (staropramen, [
+        "staropramen", "старопрамен"
+    ]),
+    "Mateus Original Rosé": (mateus_rose, [
+        "mateus original rose", "mateus rose", "матеус", "матеуш"
+    ]),
+    "Undurraga Sauvignon Blanc": (undurraga_sb, [
+        "undurraga sauvignon blanc", "undurraga", "ундарага", "совиньон блан"
+    ]),
+    "Devil’s Rock Riesling": (devils_rock_riesling, [
+        "devil's rock riesling", "devils rock", "дэвилс рок", "рислинг"
+    ]),
+    "Piccola Nostra": (piccola_nostra, [
+        "piccola nostra", "пиккола ностра"
+    ]),
+    "Эль Санчес": (el_sanches, [
+        "эль санчес", "el sanches", "санчес"
+    ]),
+    "Шале де Сюд": (chale_de_sud, [
+        "шале де сюд", "chalet des sud", "шале"
+    ]),
+    "Jägermeister": (jagermeister_info, [
+        "jagermeister", "ягермейстер", "ягер", "jager"
+    ]),
+}
 
+CANONICAL_MAP = {name.lower(): name for name in BRANDS}
 
 @search_router.message(F.text == "🔍 Поиск")
-async def search_prompt(m: Message):
-    SEARCH_USERS[m.from_user.id] = {}
+async def search_start(m: Message):
+    SEARCH_ACTIVE.add(m.from_user.id)
     await m.answer(
-        "Введите название напитка:", reply_markup=ReplyKeyboardRemove()
+        "Введите часть названия бренда:", reply_markup=ReplyKeyboardRemove()
     )
 
-
-@search_router.message(lambda m: m.from_user.id in SEARCH_USERS)
-async def search_process(m: Message):
-    state = SEARCH_USERS.get(m.from_user.id, {})
+@search_router.message(lambda m: m.from_user.id in SEARCH_ACTIVE)
+async def process_search(m: Message):
     text = m.text.lower().strip()
-    handlers = dict(SEARCH_HANDLERS)
 
-    # If user is selecting from suggested options
-    if "options" in state:
-        if text in handlers and text in state["options"]:
-            await handlers[text](m)
-            SEARCH_USERS.pop(m.from_user.id, None)
-        elif text == "отмена":
-            SEARCH_USERS.pop(m.from_user.id, None)
-            await m.answer("Поиск отменён", reply_markup=MAIN_KB)
-        else:
-            await m.answer("Пожалуйста, выберите из списка или нажмите 'Отмена'")
+    if text in {"отмена", "назад"}:
+        SEARCH_ACTIVE.discard(m.from_user.id)
+        await m.answer("Поиск отменён", reply_markup=MAIN_KB)
         return
 
-    from difflib import get_close_matches
+    if text in CANONICAL_MAP:
+        name = CANONICAL_MAP[text]
+        handler, _ = BRANDS[name]
+        await handler(m)
+        SEARCH_ACTIVE.discard(m.from_user.id)
+        await m.answer("Главное меню", reply_markup=MAIN_KB)
+        return
 
-    # Try exact drink search
-    names = list(handlers.keys())
-    matches = get_close_matches(text, names, n=3, cutoff=0.75)
+    matches = [name for name, (_, aliases) in BRANDS.items() if any(text in a for a in aliases)]
+
     if matches:
-        if len(matches) == 1:
-            await handlers[matches[0]](m)
-            SEARCH_USERS.pop(m.from_user.id, None)
-        else:
-            builder = ReplyKeyboardBuilder()
-            for name in matches:
-                builder.add(KeyboardButton(text=name))
-            builder.add(KeyboardButton(text="Отмена"))
-            builder.adjust(1)
-            state["options"] = matches
-            await m.answer("Пожалуйста, уточните:", reply_markup=builder.as_markup(resize_keyboard=True))
-        return
-
-    # Try brand search
-    BRAND_MAP = {
-        "glenfiddich": ["glenfiddich 12 years", "fire & cane", "ipa experiment"],
-        "grant's": [
-            "grant's classic",
-            "grant's summer orange",
-            "grant's winter dessert",
-            "grant's tropical fiesta",
-        ],
-        "tullamore": ["tullamore d.e.w.", "tullamore d.e.w. honey"],
-    }
-    brands = list(BRAND_MAP.keys())
-    brand_match = get_close_matches(text, brands, n=1, cutoff=0.6)
-    if brand_match:
-        items = BRAND_MAP[brand_match[0]]
-        if len(items) == 1:
-            await handlers[items[0]](m)
-            SEARCH_USERS.pop(m.from_user.id, None)
-        else:
-            builder = ReplyKeyboardBuilder()
-            for item in items:
-                builder.add(KeyboardButton(text=item))
-            builder.add(KeyboardButton(text="Отмена"))
-            builder.adjust(1)
-            state["options"] = items
-            await m.answer("Нашлось несколько вариантов:", reply_markup=builder.as_markup(resize_keyboard=True))
-        return
-
-    SEARCH_USERS.pop(m.from_user.id, None)
-    await m.answer("Ничего не найдено", reply_markup=MAIN_KB)
-
-
+        builder = ReplyKeyboardBuilder()
+        for name in matches:
+            builder.add(KeyboardButton(text=name))
+        builder.add(KeyboardButton(text="Отмена"))
+        builder.adjust(1)
+        await m.answer("Выберите бренд:", reply_markup=builder.as_markup(resize_keyboard=True))
+    else:
+        await m.answer("Ничего не найдено. Попробуйте ещё раз или нажмите Отмена.")
 from random import shuffle
-from aiogram.types import ReplyKeyboardRemove
 
 tests_router = Router()
 
