@@ -635,7 +635,7 @@ async def jagermeister_info(m: Message):
 
 
 search_router = Router()
-SEARCH_USERS: set[int] = set()
+SEARCH_USERS: dict[int, dict] = {}
 
 # Keywords for brand search mapped to handler functions
 SEARCH_HANDLERS: list[tuple[str, callable]] = [
@@ -673,7 +673,7 @@ SEARCH_HANDLERS: list[tuple[str, callable]] = [
 
 @search_router.message(F.text == "🔍 Поиск")
 async def search_prompt(m: Message):
-    SEARCH_USERS.add(m.from_user.id)
+    SEARCH_USERS[m.from_user.id] = {}
     await m.answer(
         "Введите название напитка:", reply_markup=ReplyKeyboardRemove()
     )
@@ -681,14 +681,71 @@ async def search_prompt(m: Message):
 
 @search_router.message(lambda m: m.from_user.id in SEARCH_USERS)
 async def search_process(m: Message):
-    SEARCH_USERS.discard(m.from_user.id)
-    text = m.text.lower()
-    for key, handler in SEARCH_HANDLERS:
-        if key in text or text in key:
-            await handler(m)
-            break
-    else:
-        await m.answer("Ничего не найдено", reply_markup=MAIN_KB)
+    state = SEARCH_USERS.get(m.from_user.id, {})
+    text = m.text.lower().strip()
+    handlers = dict(SEARCH_HANDLERS)
+
+    # If user is selecting from suggested options
+    if "options" in state:
+        if text in handlers and text in state["options"]:
+            await handlers[text](m)
+            SEARCH_USERS.pop(m.from_user.id, None)
+        elif text == "отмена":
+            SEARCH_USERS.pop(m.from_user.id, None)
+            await m.answer("Поиск отменён", reply_markup=MAIN_KB)
+        else:
+            await m.answer("Пожалуйста, выберите из списка или нажмите 'Отмена'")
+        return
+
+    from difflib import get_close_matches
+
+    # Try exact drink search
+    names = list(handlers.keys())
+    matches = get_close_matches(text, names, n=3, cutoff=0.75)
+    if matches:
+        if len(matches) == 1:
+            await handlers[matches[0]](m)
+            SEARCH_USERS.pop(m.from_user.id, None)
+        else:
+            builder = ReplyKeyboardBuilder()
+            for name in matches:
+                builder.add(KeyboardButton(text=name))
+            builder.add(KeyboardButton(text="Отмена"))
+            builder.adjust(1)
+            state["options"] = matches
+            await m.answer("Пожалуйста, уточните:", reply_markup=builder.as_markup(resize_keyboard=True))
+        return
+
+    # Try brand search
+    BRAND_MAP = {
+        "glenfiddich": ["glenfiddich 12 years", "fire & cane", "ipa experiment"],
+        "grant's": [
+            "grant's classic",
+            "grant's summer orange",
+            "grant's winter dessert",
+            "grant's tropical fiesta",
+        ],
+        "tullamore": ["tullamore d.e.w.", "tullamore d.e.w. honey"],
+    }
+    brands = list(BRAND_MAP.keys())
+    brand_match = get_close_matches(text, brands, n=1, cutoff=0.6)
+    if brand_match:
+        items = BRAND_MAP[brand_match[0]]
+        if len(items) == 1:
+            await handlers[items[0]](m)
+            SEARCH_USERS.pop(m.from_user.id, None)
+        else:
+            builder = ReplyKeyboardBuilder()
+            for item in items:
+                builder.add(KeyboardButton(text=item))
+            builder.add(KeyboardButton(text="Отмена"))
+            builder.adjust(1)
+            state["options"] = items
+            await m.answer("Нашлось несколько вариантов:", reply_markup=builder.as_markup(resize_keyboard=True))
+        return
+
+    SEARCH_USERS.pop(m.from_user.id, None)
+    await m.answer("Ничего не найдено", reply_markup=MAIN_KB)
 
 
 from random import shuffle
