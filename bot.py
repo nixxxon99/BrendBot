@@ -1432,10 +1432,12 @@ async def send_blitz(m: Message):
         BLITZ_STATE.pop(m.from_user.id, None)
         return
     question, options, correct = BLITZ_QUESTIONS[step]
+    shuffled = options[:]
+    shuffle(shuffled)
     st["correct"] = correct
     await m.answer(
         f"{step + 1}/{len(BLITZ_QUESTIONS)}. {question}",
-        reply_markup=kb(*(options + ["🏠 Главное меню"]), width=1),
+        reply_markup=kb(*(shuffled + ["🏠 Главное меню"]), width=1),
     )
 
 @game_router.message(lambda m: m.from_user.id in BLITZ_STATE)
