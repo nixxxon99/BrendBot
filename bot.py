@@ -18,7 +18,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s â€” %(levelname)s â€
 bot: Bot = Bot(API_TOKEN, parse_mode="HTML")
 dp: Dispatcher = Dispatcher()
 
-ADMIN_IDS: set[int] = {int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x}
+ADMIN_IDS = {1294415669}
+
 
 INFO_FILE = "user_info.json"
 try:
