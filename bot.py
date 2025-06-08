@@ -59,7 +59,8 @@ def track_brand(name: str):
         async def wrapper(m: Message, *a, **kw):
             kw.pop("bot", None)  # aiogram may inject bot kwarg
             record_brand_view(m.from_user.id, name)
-            return await func(m, *a, **kw)
+            await func(m, *a, **kw)
+            await m.answer("Главное меню", reply_markup=MAIN_KB)
         return wrapper
     return decorator
 
@@ -836,14 +837,10 @@ brand_lookup_router = Router()
 )
 async def show_brand(m: Message):
     """Send brand card regardless of how the button was created."""
-    was_search = m.from_user.id in SEARCH_ACTIVE
     clear_user_state(m.from_user.id)
     canonical = ALIAS_MAP[normalize(m.text)]
     handler, _ = BRANDS[canonical]
     await handler(m)
-    if was_search:
-        await m.answer("Главное меню", reply_markup=MAIN_KB)
-
 
 # Router to suggest brands when user enters a partial name
 suggest_router = Router()
