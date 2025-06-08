@@ -34,7 +34,7 @@ def get_stats(user_id: int) -> dict:
     if uid not in USER_STATS:
         USER_STATS[uid] = {
             "tests": 0,
-            "brands": [],
+            "brands": {},  # {brand_name: category}
             "points": 0,
             "last": "",
             "best_truth": 0,
@@ -43,10 +43,11 @@ def get_stats(user_id: int) -> dict:
         }
     return USER_STATS[uid]
 
-def record_brand_view(user_id: int, brand: str) -> None:
+def record_brand_view(user_id: int, brand: str, category: str) -> None:
+    """Store the brand under its category for the user."""
     stats = get_stats(user_id)
     if brand not in stats["brands"]:
-        stats["brands"].append(brand)
+        stats["brands"][brand] = category
     stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_stats()
 
@@ -87,11 +88,12 @@ def record_blitz_result(user_id: int, points: int) -> int:
     save_stats()
     return stats["best_blitz"]
 
-def track_brand(name: str):
+def track_brand(name: str, category: str):
+    """Decorator to record a brand view with its category."""
     def decorator(func):
         async def wrapper(m: Message, *a, **kw):
             kw.pop("bot", None)  # aiogram may inject bot kwarg
-            record_brand_view(m.from_user.id, name)
+            record_brand_view(m.from_user.id, name, category)
             await func(m, *a, **kw)
             await m.answer("Главное меню", reply_markup=MAIN_KB)
         return wrapper
@@ -144,17 +146,22 @@ async def cmd_start(m: Message):
 async def show_stats(m: Message):
     clear_user_state(m.from_user.id)
     st = get_stats(m.from_user.id)
-    brands = ", ".join(st["brands"]) if st["brands"] else "—"
     last = st["last"] or "—"
+    categories = ["Виски", "Водка", "Пиво", "Вино", "Ликёр"]
+    counts = {c: 0 for c in categories}
+    for cat in st["brands"].values():
+        counts[cat] = counts.get(cat, 0) + 1
+    brand_lines = "\n".join(f"— {c}: {counts.get(c, 0)}" for c in categories)
     await m.answer(
         f"Пройдено тестов: {st['tests']}\n"
-        f"Просмотрено брендов: {brands}\n"
         f"Набрано баллов: {st['points']}\n"
         f"Рекорд в игре \"Верю — не верю\": {st['best_truth']}\n"
         f"Рекорд в игре \"Ассоциации\": {st['best_assoc']}\n"
         f"Рекорд в игре \"Блиц\": {st['best_blitz']}\n"
+        "Просмотренные бренды:\n"
+        f"{brand_lines}\n"
         f"Последняя активность: {last}",
-        reply_markup=MAIN_KB
+        reply_markup=MAIN_KB,
     )
 
 @main_router.message(F.text == "Меню брендов")
@@ -187,7 +194,7 @@ async def whisky_back(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
-@track_brand("Monkey Shoulder")
+@track_brand("Monkey Shoulder", "Виски")
 async def monkey_shoulder(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIG1Gg4mSjJixcbMGy0c8I78DrLN9OpAAJe7jEbCVnJSTfCOMW8hxrQAQADAgADeAADNgQ",  # твой file_id
@@ -206,7 +213,7 @@ async def monkey_shoulder(m: Message):
         parse_mode="HTML"
     )
 
-@track_brand("Glenfiddich 12 Years")
+@track_brand("Glenfiddich 12 Years", "Виски")
 async def glenfiddich_12(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIG2Gg4ncf9Rpxv9rooJ0Ha2FD40CORAAK_8jEbPObJSR3uT8xKG0UpAQADAgADeQADNgQ",  # ← сюда вставь свой file_id без кавычек
@@ -225,7 +232,7 @@ async def glenfiddich_12(m: Message):
         parse_mode="HTML"
     )
 
-@track_brand("Glenfiddich Fire & Cane")
+@track_brand("Glenfiddich Fire & Cane", "Виски")
 async def fire_and_cane(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIG2mg4ncuOjEqivJgv27H62zK4XOvFAAIK9TEb1P3ISXHpOhsLyQ4DAQADAgADeQADNgQ",  # ← вставь свой file_id
@@ -245,7 +252,7 @@ async def fire_and_cane(m: Message):
         parse_mode="HTML"
     )
 
-@track_brand("Glenfiddich IPA")
+@track_brand("Glenfiddich IPA", "Виски")
 async def ipa_experiment(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIG52g4npbaJO1p_0s7aVNpQ5_r9nkEAAIT9TEb1P3ISRjGBYkQaU3hAQADAgADeQADNgQ",  # ← вставь свой file_id
@@ -265,7 +272,7 @@ async def ipa_experiment(m: Message):
         parse_mode="HTML"
     )
 
-@track_brand("Grant's Classic")
+@track_brand("Grant's Classic", "Виски")
 async def grants_classic(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIG3Gg4nc5TGsJHjrEPyk-J7PNFHVvAAAIL9TEb1P3ISZjP54Yf2Z6PAQADAgADeQADNgQ",  # ← вставь свой file_id
@@ -286,7 +293,7 @@ async def grants_classic(m: Message):
     )
 
 
-@track_brand("Grant's Summer Orange")
+@track_brand("Grant's Summer Orange", "Виски")
 async def grants_summer_orange(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIG4mg4ndf9tfQikXAQPk-lIxaS4yMsAAIO9TEb1P3ISWY8m8SH7F44AQADAgADeQADNgQ",  # ← сюда вставь свой file_id
@@ -306,7 +313,7 @@ async def grants_summer_orange(m: Message):
         parse_mode="HTML"
     )
 
-@track_brand("Grant's Winter Dessert")
+@track_brand("Grant's Winter Dessert", "Виски")
 async def grants_winter_dessert(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIG3mg4ndDXJWAkbTrFKLhtgoVbFaDsAAIM9TEb1P3ISZq_Ca_jZFUSAQADAgADeQADNgQ",  # ← сюда вставь свой file_id
@@ -326,7 +333,7 @@ async def grants_winter_dessert(m: Message):
         parse_mode="HTML"
     )
 
-@track_brand("Grant's Tropical Fiesta")
+@track_brand("Grant's Tropical Fiesta", "Виски")
 async def grants_tropical_fiesta(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIG4Gg4ndPl6Fi0nM3zF9P8Va09iX6LAAIN9TEb1P3ISQ2wk7vc2-toAQADAgADeQADNgQ",  # ← сюда вставь свой file_id
@@ -346,7 +353,7 @@ async def grants_tropical_fiesta(m: Message):
         parse_mode="HTML"
     )
 
-@track_brand("Tullamore D.E.W.")
+@track_brand("Tullamore D.E.W.", "Виски")
 async def tullamore_dew(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIG5Gg4npCx1IL5QMiN-XatPLCICdo1AALG8jEbPObJSSzMH93C0bHVAQADAgADeQADNgQ",  # ← сюда вставь свой file_id
@@ -366,7 +373,7 @@ async def tullamore_dew(m: Message):
         parse_mode="HTML"
     )
 
-@track_brand("Tullamore D.E.W. Honey")
+@track_brand("Tullamore D.E.W. Honey", "Виски")
 async def tullamore_honey(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIG_2g4qxyZA7ZsneXEwpn9IZwP00efAAJn9TEb1P3ISSXBLkMW4PngAQADAgADeAADNgQ",  # ← сюда вставь свой file_id
@@ -403,7 +410,7 @@ async def vodka_back(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
-@track_brand("Серебрянка")
+@track_brand("Серебрянка", "Водка")
 async def srebryanka(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAIK-Gg8CRgDjmxfkUP-Ui86uo8Lm4OSAAJS9zEbPHPgSVUkEXccwFmIAQADAgADeQADNgQ",
@@ -420,7 +427,7 @@ async def srebryanka(m: Message):
         )
     )
 
-@track_brand("Reyka")
+@track_brand("Reyka", "Водка")
 async def reyka(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILCWg8EVlyH6R2QScf7Q4nZzXoKgw4AAKG9zEbPHPgSUK7bfwT0QdLAQADAgADbQADNgQ",  
@@ -438,7 +445,7 @@ async def reyka(m: Message):
         )
     )
     
-@track_brand("Finlandia")
+@track_brand("Finlandia", "Водка")
 async def finlandia(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILC2g8Eli-TYUT9EM8fzglAi5soVNhAAKJ9zEbPHPgSekXdAio1hxGAQADAgADeQADNgQ",
@@ -456,7 +463,7 @@ async def finlandia(m: Message):
         )
     )
 
-@track_brand("Зелёная марка")
+@track_brand("Зелёная марка", "Водка")
 async def zelenaya_marka(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILB2g8EThJMJe1UMamIxOOc_dAAnWJAAKD9zEbPHPgSRx1MKEz6FkVAQADAgADeAADNgQ",  
@@ -475,7 +482,7 @@ async def zelenaya_marka(m: Message):
     )
 
 
-@track_brand("Талка")
+@track_brand("Талка", "Водка")
 async def talka(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILDWg8EwSC0zkdPOWDiuPJwDjZnD6-AAKO9zEbPHPgSVVZcdKwdwxDAQADAgADeQADNgQ",
@@ -492,7 +499,7 @@ async def talka(m: Message):
         )
     )
 
-@track_brand("Русский Стандарт")
+@track_brand("Русский Стандарт", "Водка")
 async def russkiy_standart(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILD2g8EzK_RPkeZPk2_gPWpB5xh_4CAAKP9zEbPHPgSWZgm1smh6zxAQADAgADeQADNgQ", 
@@ -528,7 +535,7 @@ async def beer_back(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
-@track_brand("Paulaner")
+@track_brand("Paulaner", "Пиво")
 async def paulaner(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILKmg8FzKSP73SszDZhdcxRRRWag1hAAKl9zEbPHPgSSyVatusTBp3AQADAgADeQADNgQ",
@@ -545,7 +552,7 @@ async def paulaner(m: Message):
         )
     )    
 
-@track_brand("Blue Moon")
+@track_brand("Blue Moon", "Пиво")
 async def blue_moon(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILOGg8GB7izbq1UzrpiNATph1gsPAGAAKv9zEbPHPgSYK1lfCxnUKEAQADAgADeAADNgQ",
@@ -562,7 +569,7 @@ async def blue_moon(m: Message):
             "• Отлично заходит тем, кто не любит горечь IPA"
         )
     )
-@track_brand("London Pride")
+@track_brand("London Pride", "Пиво")
 async def london_pride(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILOmg8GJPTpk3KYW-eQheQ_ptxulNjAAK09zEbPHPgSel9dYZxhnk8AQADAgADeAADNgQ",
@@ -580,7 +587,7 @@ async def london_pride(m: Message):
         )
     )
 
-@track_brand("Coors")
+@track_brand("Coors", "Пиво")
 async def coors(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILPGg8GOm6MQNr5kSeEHSivJDvs3fGAAK39zEbPHPgST-l5QL573P0AQADAgADeQADNgQ",
@@ -598,7 +605,7 @@ async def coors(m: Message):
         )
     )
 
-@track_brand("Staropramen")
+@track_brand("Staropramen", "Пиво")
 async def staropramen(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILPmg8GS-vTMPmpwqAdJaQn_-TcBnYAAK59zEbPHPgSYKtiAbkwYS3AQADAgADeAADNgQ",
@@ -634,7 +641,7 @@ async def wine_back(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
-@track_brand("Mateus Original Rosé")
+@track_brand("Mateus Original Rosé", "Вино")
 async def mateus_rose(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILUGg8Gx2S1sAohmNgv870lc1VvUdaAALC9zEbPHPgSZwxOkkyUzl2AQADAgADeQADNgQ",
@@ -653,7 +660,7 @@ async def mateus_rose(m: Message):
         )
     )
 
-@track_brand("Undurraga Sauvignon Blanc")
+@track_brand("Undurraga Sauvignon Blanc", "Вино")
 async def undurraga_sb(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILVmg8HAghUtu6l0-rE7dGF0PLdzGYAALU9zEbPHPgSduFfYYWlxmOAQADAgADeQADNgQ",
@@ -672,7 +679,7 @@ async def undurraga_sb(m: Message):
         )
     )
 
-@track_brand("Devil’s Rock Riesling")
+@track_brand("Devil’s Rock Riesling", "Вино")
 async def devils_rock_riesling(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILXmg8HL0ZOUJYurNUmx1RK7xZYadHAALc9zEbPHPgSdjIeJJeBYRdAQADAgADeQADNgQ",
@@ -691,7 +698,7 @@ async def devils_rock_riesling(m: Message):
         )
     )
 
-@track_brand("Piccola Nostra")
+@track_brand("Piccola Nostra", "Вино")
 async def piccola_nostra(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILXGg8HLGVozwsE57zvCpYkQn_IDiaAALb9zEbPHPgSZzW-CvfBN3OAQADAgADeQADNgQ",
@@ -710,7 +717,7 @@ async def piccola_nostra(m: Message):
         )
     )
 
-@track_brand("Эль Санчес")
+@track_brand("Эль Санчес", "Вино")
 async def el_sanches(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILWGg8HJ5SEDUTg8UUswi8qdBrKBdsAALZ9zEbPHPgScB4ihQKmAVmAQADAgADeQADNgQ",
@@ -729,7 +736,7 @@ async def el_sanches(m: Message):
         )
     )
 
-@track_brand("Шале де Сюд")
+@track_brand("Шале де Сюд", "Вино")
 async def chale_de_sud(m: Message):
     await m.answer_photo(
         photo="AgACAgIAAxkBAAILWmg8HKjtY9IaTW5OgLBx1LZ4NbU2AALa9zEbPHPgSfWt245fgG4PAQADAgADeAADNgQ",
@@ -750,7 +757,7 @@ async def chale_de_sud(m: Message):
     
 jager_router = Router()
 
-@track_brand("Jägermeister")
+@track_brand("Jägermeister", "Ликёр")
 async def jagermeister_info(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer_photo(
