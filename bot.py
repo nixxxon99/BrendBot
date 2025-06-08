@@ -762,7 +762,6 @@ async def jagermeister_info(m: Message):
 
 search_router = Router()
 SEARCH_ACTIVE: set[int] = set()
-SEARCH_RESULTS: dict[int, list[str]] = {}
 
 BRANDS: dict[str, tuple[callable, list[str]]] = {
     "Monkey Shoulder": (monkey_shoulder, [
@@ -878,58 +877,65 @@ CANONICAL_MAP = {name.lower(): name for name in BRANDS}
 async def search_start(m: Message):
     SEARCH_ACTIVE.add(m.from_user.id)
     await m.answer(
-        "Введите часть названия бренда:", reply_markup=ReplyKeyboardRemove()
+        "Введите часть названия бренда (например: глен, glen, грант, пауланер):",
+        reply_markup=ReplyKeyboardRemove(),
     )
 
 @search_router.message(lambda m: m.from_user.id in SEARCH_ACTIVE)
 async def process_search(m: Message):
     text = m.text.strip()
-    lower_text = text.lower()
+    normalized = normalize(text)
 
-    if lower_text in {"отмена", "назад"}:
+    if normalized in {"отмена", "назад"}:
         SEARCH_ACTIVE.discard(m.from_user.id)
-        SEARCH_RESULTS.pop(m.from_user.id, None)
         await m.answer("Поиск отменён", reply_markup=MAIN_KB)
         return
 
-    # --- Если ввели точное название бренда ---
-    if text in BRANDS:
-        SEARCH_ACTIVE.discard(m.from_user.id)
-        SEARCH_RESULTS.pop(m.from_user.id, None)
-        handler, _ = BRANDS[text]
-        await handler(m)
-        await m.answer("Главное меню", reply_markup=MAIN_KB)
-        return
-
-    # Также проверяем по ALIAS_MAP на случай расхождений с кнопками
-    normalized = normalize(text)
+    # Если введён бренд точно (название или алиас)
     if normalized in ALIAS_MAP:
         SEARCH_ACTIVE.discard(m.from_user.id)
-        SEARCH_RESULTS.pop(m.from_user.id, None)
         canonical = ALIAS_MAP[normalized]
         handler, _ = BRANDS[canonical]
         await handler(m)
         await m.answer("Главное меню", reply_markup=MAIN_KB)
         return
-    # ---------------------------------------------------------
 
-    matches = [
-        name
-        for name, (_, aliases) in BRANDS.items()
-        if any(normalized in normalize(a) for a in aliases)
-    ]
+    # Ищем все бренды, где есть совпадение
+    matches: list[str] = []
+    for brand_name, (_, aliases) in BRANDS.items():
+        for alias in aliases + [brand_name]:
+            if normalized in normalize(alias):
+                matches.append(brand_name)
+                break
 
-    if matches:
-        SEARCH_RESULTS[m.from_user.id] = matches
-        builder = ReplyKeyboardBuilder()
-        for name in matches:
-            builder.add(KeyboardButton(text=name))
-        builder.add(KeyboardButton(text="Отмена"))
-        builder.adjust(1)
-        await m.answer("Выберите бренд:", reply_markup=builder.as_markup(resize_keyboard=True))
-    else:
-        SEARCH_RESULTS.pop(m.from_user.id, None)
+    # Убираем дубликаты
+    matches = list(dict.fromkeys(matches))
+
+    if not matches:
         await m.answer("Ничего не найдено. Попробуйте ещё раз или нажмите Отмена.")
+        return
+
+    if len(matches) == 1:
+        SEARCH_ACTIVE.discard(m.from_user.id)
+        handler, _ = BRANDS[matches[0]]
+        await handler(m)
+        await m.answer("Главное меню", reply_markup=MAIN_KB)
+        return
+
+    builder = ReplyKeyboardBuilder()
+    for brand in matches:
+        builder.add(KeyboardButton(text=brand))
+    builder.add(KeyboardButton(text="Отмена"))
+    builder.adjust(1)
+    await m.answer("Выберите бренд:", reply_markup=builder.as_markup(resize_keyboard=True))
+
+# Для обработки выбора из клавиатуры
+@search_router.message(lambda m: m.from_user.id in SEARCH_ACTIVE and m.text in BRANDS)
+async def brand_from_keyboard(m: Message):
+    SEARCH_ACTIVE.discard(m.from_user.id)
+    handler, _ = BRANDS[m.text]
+    await handler(m)
+    await m.answer("Главное меню", reply_markup=MAIN_KB)
 from random import shuffle
 
 tests_router = Router()
