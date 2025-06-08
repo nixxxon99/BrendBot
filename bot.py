@@ -38,7 +38,8 @@ def get_stats(user_id: int) -> dict:
             "points": 0,
             "last": "",
             "best_truth": 0,
-            "best_assoc": 0
+            "best_assoc": 0,
+            "best_blitz": 0
         }
     return USER_STATS[uid]
 
@@ -76,6 +77,16 @@ def record_assoc_result(user_id: int, points: int) -> int:
     save_stats()
     return stats["best_assoc"]
 
+def record_blitz_result(user_id: int, points: int) -> int:
+    """Update user's best score for blitz game and total points."""
+    stats = get_stats(user_id)
+    if points > stats.get("best_blitz", 0):
+        stats["best_blitz"] = points
+    stats["points"] += points
+    stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    save_stats()
+    return stats["best_blitz"]
+
 def track_brand(name: str):
     def decorator(func):
         async def wrapper(m: Message, *a, **kw):
@@ -92,6 +103,7 @@ def clear_user_state(user_id: int) -> None:
     USER_STATE.pop(user_id, None)
     GAME_STATE.pop(user_id, None)
     ASSOC_STATE.pop(user_id, None)
+    BLITZ_STATE.pop(user_id, None)
 
 def normalize(text: str) -> str:
     """Return lowercased text without spaces or punctuation for matching."""
@@ -141,6 +153,7 @@ async def show_stats(m: Message):
         f"Набрано баллов: {st['points']}\n"
         f"Рекорд в игре \"Верю — не верю\": {st['best_truth']}\n"
         f"Рекорд в игре \"Ассоциации\": {st['best_assoc']}\n"
+        f"Рекорд в игре \"Блиц\": {st['best_blitz']}\n"
         f"Последняя активность: {last}",
         reply_markup=MAIN_KB
     )
@@ -863,6 +876,7 @@ brand_lookup_router = Router()
         m.from_user.id not in USER_STATE
         and m.from_user.id not in GAME_STATE
         and m.from_user.id not in ASSOC_STATE
+        and m.from_user.id not in BLITZ_STATE
         and normalize(m.text) in ALIAS_MAP
     )
 )
@@ -882,6 +896,7 @@ def _has_partial_match(m: Message) -> bool:
         or m.from_user.id in USER_STATE
         or m.from_user.id in GAME_STATE
         or m.from_user.id in ASSOC_STATE
+        or m.from_user.id in BLITZ_STATE
     ):
         return False
     if not m.text:
@@ -1037,7 +1052,13 @@ QUESTIONS = {
         }
 }
 
-GAME_MENU_KB = kb("🟢 Верю — не верю", "🔗 Ассоциации", "Назад к меню", width=1)
+GAME_MENU_KB = kb(
+    "🟢 Верю — не верю",
+    "🔗 Ассоциации",
+    "⚡️ Блиц",
+    "Назад к меню",
+    width=1,
+)
 
 TRUTH_QUESTIONS: list[tuple[str, bool]] = [
     ("Monkey Shoulder — это односолодовый виски.", False),
@@ -1081,9 +1102,113 @@ ASSOCIATIONS: list[tuple[str, str]] = [
     ("Чешское, лагер, Прага", "Staropramen"),
 ]
 
+BLITZ_QUESTIONS: list[tuple[str, list[str], str]] = [
+    ("Monkey Shoulder — это купаж или односолодовый виски?",
+     ["Купаж", "Односолодовый"], "Купаж"),
+    ("В каком городе делают Paulaner?",
+     ["Мюнхен", "Берлин", "Лондон", "Прага"], "Мюнхен"),
+    ("Главный ингредиент для Jack Daniel’s Honey?",
+     ["Виски", "Ром", "Джин", "Водка"], "Виски"),
+    ("Какой бренд выпускает Summer Orange и Tropical Fiesta?",
+     ["Grant’s", "Glenfiddich", "Jack Daniel’s", "Paulaner"], "Grant’s"),
+    ("Страна происхождения Jägermeister?",
+     ["Германия", "Ирландия", "США", "Россия"], "Германия"),
+    ("Glenfiddich IPA — это виски, выдержанный в бочках из-под...",
+     ["Пива", "Рома", "Вина", "Коньяка"], "Пива"),
+    ("Серебрянка — это...",
+     ["Водка", "Пиво", "Ликёр", "Виски"], "Водка"),
+    ("Jack Daniel’s производится в...",
+     ["Теннесси", "Кентукки", "Лондон", "Мюнхен"], "Теннесси"),
+    ("В каком напитке 56 трав?",
+     ["Jägermeister", "Grant’s", "Glenfiddich", "Paulaner"], "Jägermeister"),
+    ("Какой бренд традиционно ассоциируется с Октоберфестом?",
+     ["Paulaner", "Glenfiddich", "Jack Daniel’s", "Monkey Shoulder"], "Paulaner"),
+    ("В каком году появился Jägermeister?",
+     ["1934", "1890", "1950", "2000"], "1934"),
+    ("Glenfiddich переводится как...",
+     ["Долина оленя", "Лес виски", "Грант и сыновья", "Зеленая лужайка"], "Долина оленя"),
+    ("В каком стиле выдержан Glenfiddich Fire & Cane?",
+     ["Копченый с нотами рома", "Яблочный сидр", "Медовый", "Ваниль"], "Копченый с нотами рома"),
+    ("Какой напиток производится в Казахстане?",
+     ["Серебрянка", "Glenfiddich", "Jägermeister", "Jack Daniel’s"], "Серебрянка"),
+    ("У какого бренда логотип с оленем?",
+     ["Glenfiddich", "Jack Daniel’s", "Grant’s", "Monkey Shoulder"], "Glenfiddich"),
+    ("Какой коктейль классически делают с Monkey Shoulder?",
+     ["Old Fashioned", "Mojito", "Margarita", "Daiquiri"], "Old Fashioned"),
+    ("Сколько сортов пива производит Paulaner?",
+     ["Более 10", "Только 1", "3", "0"], "Более 10"),
+    ("К какому классу относится Grant’s?",
+     ["Купажированный шотландский виски", "Ром", "Бурбон", "Водка"], "Купажированный шотландский виски"),
+    ("Какой цвет часто встречается на этикетках Jägermeister?",
+     ["Зеленый", "Синий", "Желтый", "Красный"], "Зеленый"),
+    ("В каком напитке есть вкус мёда?",
+     ["Jack Daniel’s Honey", "Paulaner", "Grant’s", "Glenfiddich IPA"], "Jack Daniel’s Honey"),
+    ("Какой бренд выпускает лимитированные вкусы Summer Orange и Tropical Fiesta?",
+     ["Grant’s", "Monkey Shoulder", "Paulaner", "Jack Daniel’s"], "Grant’s"),
+    ("Сколько трав входит в состав Jägermeister?",
+     ["56", "12", "21", "7"], "56"),
+    ("Какой виски выдерживают в бочках из-под IPA?",
+     ["Glenfiddich", "Grant’s", "Monkey Shoulder", "Jack Daniel’s"], "Glenfiddich"),
+    ("Какой бренд родом из Германии?",
+     ["Paulaner", "Jack Daniel’s", "Glenfiddich", "Grant’s"], "Paulaner"),
+    ("Как называется серия Grant’s с ярко выраженными фруктовыми нотами?",
+     ["Tropical Fiesta", "Classic", "IPA", "Fire & Cane"], "Tropical Fiesta"),
+    ("В каком бренде используется фильтрация через кленовый уголь?",
+     ["Jack Daniel’s", "Glenfiddich", "Paulaner", "Jägermeister"], "Jack Daniel’s"),
+    ("Что добавляют в Grant’s Summer Orange?",
+     ["Апельсин", "Ваниль", "Мята", "Мед"], "Апельсин"),
+    ("Какой бренд выпускает IPA Experiment?",
+     ["Glenfiddich", "Grant’s", "Monkey Shoulder", "Paulaner"], "Glenfiddich"),
+    ("Какой продукт производится методом тройной дистилляции?",
+     ["Tullamore D.E.W.", "Paulaner", "Grant’s", "Glenfiddich"], "Tullamore D.E.W."),
+    ("Какой бренд используют для коктейлей \"Whiskey Sour\"?",
+     ["Monkey Shoulder", "Paulaner", "Jack Daniel’s", "Jägermeister"], "Monkey Shoulder"),
+    ("Где находится родина Jack Daniel’s?",
+     ["США", "Германия", "Шотландия", "Ирландия"], "США"),
+    ("Какой из брендов НЕ относится к виски?",
+     ["Paulaner", "Glenfiddich", "Grant’s", "Monkey Shoulder"], "Paulaner"),
+    ("Какой бренд ассоциируется с фестивалем Октоберфест?",
+     ["Paulaner", "Jack Daniel’s", "Glenfiddich", "Grant’s"], "Paulaner"),
+    ("Какой напиток подают сильно охлаждённым?",
+     ["Jägermeister", "Grant’s", "Paulaner", "Glenfiddich"], "Jägermeister"),
+    ("Что изображено на этикетке Grant’s?",
+     ["Треугольник", "Медведь", "Олень", "Корабль"], "Треугольник"),
+    ("Какой бренд славится медовым вкусом?",
+     ["Jack Daniel’s Honey", "Glenfiddich", "Paulaner", "Grant’s"], "Jack Daniel’s Honey"),
+    ("Monkey Shoulder отлично подходит для...",
+     ["Коктейлей", "Пива", "Ликёров", "Водки"], "Коктейлей"),
+    ("Какой бренд выпускает Fire & Cane?",
+     ["Glenfiddich", "Paulaner", "Grant’s", "Jack Daniel’s"], "Glenfiddich"),
+    ("Серебрянка производится в...",
+     ["Казахстане", "Германии", "США", "Шотландии"], "Казахстане"),
+    ("Какой напиток делают из ячменя?",
+     ["Виски", "Ром", "Пиво", "Джин"], "Виски"),
+    ("Какой напиток крепче — Jägermeister или Grant’s?",
+     ["Grant’s", "Jägermeister"], "Grant’s"),
+    ("Какой бренд выпускает Irish Honey?",
+     ["Tullamore D.E.W.", "Glenfiddich", "Paulaner", "Grant’s"], "Tullamore D.E.W."),
+    ("Какой из брендов НЕ производится в Европе?",
+     ["Jack Daniel’s", "Paulaner", "Glenfiddich", "Grant’s"], "Jack Daniel’s"),
+    ("Какой бренд известен своим \"оленем\"?",
+     ["Glenfiddich", "Monkey Shoulder", "Paulaner", "Jack Daniel’s"], "Glenfiddich"),
+    ("Какой бренд делают из солода?",
+     ["Glenfiddich", "Grant’s", "Paulaner", "Jack Daniel’s"], "Glenfiddich"),
+    ("В каком продукте больше 50 трав?",
+     ["Jägermeister", "Glenfiddich", "Grant’s", "Paulaner"], "Jägermeister"),
+    ("Какой напиток бывает нефильтрованным?",
+     ["Пиво", "Виски", "Водка", "Ликёр"], "Пиво"),
+    ("Какой напиток делают на заводе в Мюнхене?",
+     ["Paulaner", "Grant’s", "Glenfiddich", "Jack Daniel’s"], "Paulaner"),
+    ("Какой бренд больше всего ассоциируется с вечеринками?",
+     ["Jägermeister", "Glenfiddich", "Paulaner", "Grant’s"], "Jägermeister"),
+    ("Какой напиток делают из картофеля?",
+     ["Водка", "Виски", "Пиво", "Джин"], "Водка"),
+]
+
 USER_STATE: dict[int, dict] = {}
 GAME_STATE: dict[int, dict] = {}
 ASSOC_STATE: dict[int, dict] = {}
+BLITZ_STATE: dict[int, dict] = {}
 
 @tests_router.message(F.text == "📋 Тесты")
 async def tests_menu(m: Message):
@@ -1184,6 +1309,12 @@ async def start_assoc_game(m: Message):
     ASSOC_STATE[m.from_user.id] = {"step": 0, "score": 0}
     await send_assoc(m)
 
+@game_router.message(F.text == "⚡️ Блиц")
+async def start_blitz_game(m: Message):
+    clear_user_state(m.from_user.id)
+    BLITZ_STATE[m.from_user.id] = {"step": 0, "score": 0}
+    await send_blitz(m)
+
 @game_router.message(lambda m: m.text == "Назад к меню")
 async def game_back(m: Message):
     clear_user_state(m.from_user.id)
@@ -1279,6 +1410,49 @@ async def assoc_answer(m: Message):
     st["step"] += 1
     await send_assoc(m)
 
+async def send_blitz(m: Message):
+    st = BLITZ_STATE[m.from_user.id]
+    step = st["step"]
+    if step >= len(BLITZ_QUESTIONS):
+        score = st["score"]
+        best = record_blitz_result(m.from_user.id, score)
+        total = len(BLITZ_QUESTIONS)
+        if score <= 25:
+            remark = "😕 Попробуй ещё раз!"
+        elif 26 <= score <= 40:
+            remark = "🙂 Хороший результат!"
+        elif 41 <= score <= 49:
+            remark = "👍 Отлично!"
+        else:
+            remark = "🏆 Идеально!"
+        await m.answer(
+            f"Игра окончена! Правильных ответов: {score}/{total}\n{remark}\nРекорд: {best}",
+            reply_markup=MAIN_KB,
+        )
+        BLITZ_STATE.pop(m.from_user.id, None)
+        return
+    question, options, correct = BLITZ_QUESTIONS[step]
+    st["correct"] = correct
+    await m.answer(
+        f"{step + 1}/{len(BLITZ_QUESTIONS)}. {question}",
+        reply_markup=kb(*(options + ["🏠 Главное меню"]), width=1),
+    )
+
+@game_router.message(lambda m: m.from_user.id in BLITZ_STATE)
+async def blitz_answer(m: Message):
+    if m.text == "🏠 Главное меню":
+        BLITZ_STATE.pop(m.from_user.id, None)
+        await m.answer("Главное меню", reply_markup=MAIN_KB)
+        return
+    st = BLITZ_STATE[m.from_user.id]
+    if m.text == st["correct"]:
+        st["score"] += 1
+        await m.answer("✅ Верно!")
+    else:
+        await m.answer(f"❌ Неверно. Правильный ответ: {st['correct']}")
+    st["step"] += 1
+    await send_blitz(m)
+
 
 @dp.message(F.photo)
 async def get_file_id(m: Message):
@@ -1305,6 +1479,7 @@ dp.include_routers(
         m.from_user.id not in USER_STATE
         and m.from_user.id not in GAME_STATE
         and m.from_user.id not in ASSOC_STATE
+        and m.from_user.id not in BLITZ_STATE
         and normalize(m.text) in ALIAS_MAP
     )
 )
