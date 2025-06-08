@@ -892,7 +892,7 @@ async def process_search(m: Message):
         await m.answer("Поиск отменён", reply_markup=MAIN_KB)
         return
 
-    # --- Если выбрали бренд из списка, показываем карточку ---
+    # --- Если ввели точное название бренда ---
     if text in BRANDS:
         SEARCH_ACTIVE.discard(m.from_user.id)
         SEARCH_RESULTS.pop(m.from_user.id, None)
@@ -900,9 +900,18 @@ async def process_search(m: Message):
         await handler(m)
         await m.answer("Главное меню", reply_markup=MAIN_KB)
         return
-    # ---------------------------------------------------------
 
+    # Также проверяем по ALIAS_MAP на случай расхождений с кнопками
     normalized = normalize(text)
+    if normalized in ALIAS_MAP:
+        SEARCH_ACTIVE.discard(m.from_user.id)
+        SEARCH_RESULTS.pop(m.from_user.id, None)
+        canonical = ALIAS_MAP[normalized]
+        handler, _ = BRANDS[canonical]
+        await handler(m)
+        await m.answer("Главное меню", reply_markup=MAIN_KB)
+        return
+    # ---------------------------------------------------------
 
     matches = [
         name
