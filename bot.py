@@ -891,9 +891,9 @@ async def process_search(m: Message):
         await m.answer("Поиск отменён", reply_markup=MAIN_KB)
         return
 
-    if lower_text in CANONICAL_MAP:
+    if normalized in ALIAS_MAP:
         SEARCH_ACTIVE.discard(m.from_user.id)
-        name = CANONICAL_MAP[lower_text]
+        name = ALIAS_MAP[normalized]
         handler, _ = BRANDS[name]
         await handler(m)
         await m.answer("Главное меню", reply_markup=MAIN_KB)
