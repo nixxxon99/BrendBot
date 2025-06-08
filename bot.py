@@ -37,7 +37,8 @@ def get_stats(user_id: int) -> dict:
             "brands": [],
             "points": 0,
             "last": "",
-            "best_truth": 0
+            "best_truth": 0,
+            "best_assoc": 0
         }
     return USER_STATS[uid]
 
@@ -65,6 +66,16 @@ def record_truth_result(user_id: int, points: int) -> int:
     save_stats()
     return stats["best_truth"]
 
+def record_assoc_result(user_id: int, points: int) -> int:
+    """Update user's best score for associations game and total points."""
+    stats = get_stats(user_id)
+    if points > stats.get("best_assoc", 0):
+        stats["best_assoc"] = points
+    stats["points"] += points
+    stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    save_stats()
+    return stats["best_assoc"]
+
 def track_brand(name: str):
     def decorator(func):
         async def wrapper(m: Message, *a, **kw):
@@ -80,6 +91,7 @@ def clear_user_state(user_id: int) -> None:
     SEARCH_ACTIVE.discard(user_id)
     USER_STATE.pop(user_id, None)
     GAME_STATE.pop(user_id, None)
+    ASSOC_STATE.pop(user_id, None)
 
 def normalize(text: str) -> str:
     """Return lowercased text without spaces or punctuation for matching."""
@@ -128,6 +140,7 @@ async def show_stats(m: Message):
         f"Просмотрено брендов: {brands}\n"
         f"Набрано баллов: {st['points']}\n"
         f"Рекорд в игре \"Верю — не верю\": {st['best_truth']}\n"
+        f"Рекорд в игре \"Ассоциации\": {st['best_assoc']}\n"
         f"Последняя активность: {last}",
         reply_markup=MAIN_KB
     )
@@ -941,7 +954,7 @@ async def process_search(m: Message):
     builder.add(KeyboardButton(text="Отмена"))
     builder.adjust(1)
     await m.answer("Выберите бренд:", reply_markup=builder.as_markup(resize_keyboard=True))
-from random import shuffle
+from random import shuffle, sample
 
 tests_router = Router()
 game_router = Router()
@@ -1015,7 +1028,7 @@ QUESTIONS = {
         }
 }
 
-GAME_MENU_KB = kb("🟢 Верю — не верю", "Назад к меню", width=1)
+GAME_MENU_KB = kb("🟢 Верю — не верю", "🔗 Ассоциации", "Назад к меню", width=1)
 
 TRUTH_QUESTIONS: list[tuple[str, bool]] = [
     ("Monkey Shoulder — это односолодовый виски.", False),
@@ -1040,8 +1053,28 @@ TRUTH_QUESTIONS: list[tuple[str, bool]] = [
     ("Grant’s выпускает только один вид виски.", False),
 ]
 
+# (associations, correct brand)
+ASSOCIATIONS: list[tuple[str, str]] = [
+    ("Обезьяны, купаж, коктейли", "Monkey Shoulder"),
+    ("56 трав, Германия, ликёр", "Jägermeister"),
+    ("12 лет, олень, Спейсайд", "Glenfiddich 12 Years"),
+    ("Виски, торф, карамель", "Glenfiddich Fire & Cane"),
+    ("Виски, IPA, эксперимент", "Glenfiddich IPA"),
+    ("Апельсин, летний, виски", "Grant's Summer Orange"),
+    ("Мёд, Ирландия, ликёр", "Tullamore D.E.W. Honey"),
+    ("Пшеничное, мюнхен, Германия", "Paulaner"),
+    ("Американское, апельсин, кориандр", "Blue Moon"),
+    ("Серебро, Казахстан, водка", "Серебрянка"),
+    ("Исландия, лава, водка", "Reyka"),
+    ("Немецкое, рислинг, белое", "Devil’s Rock Riesling"),
+    ("Водка, ледниковая, Финляндия", "Finlandia"),
+    ("Красное полусладкое, Испания, вино", "Эль Санчес"),
+    ("Чешское, лагер, Прага", "Staropramen"),
+]
+
 USER_STATE: dict[int, dict] = {}
 GAME_STATE: dict[int, dict] = {}
+ASSOC_STATE: dict[int, dict] = {}
 
 @tests_router.message(F.text == "📋 Тесты")
 async def tests_menu(m: Message):
@@ -1136,6 +1169,12 @@ async def start_truth_game(m: Message):
     )
     await send_truth(m)
 
+@game_router.message(F.text == "🔗 Ассоциации")
+async def start_assoc_game(m: Message):
+    clear_user_state(m.from_user.id)
+    ASSOC_STATE[m.from_user.id] = {"step": 0, "score": 0}
+    await send_assoc(m)
+
 @game_router.message(lambda m: m.text == "Назад к меню")
 async def game_back(m: Message):
     clear_user_state(m.from_user.id)
@@ -1185,6 +1224,51 @@ async def truth_answer(m: Message):
         await m.answer("❌ Неверно")
     st["step"] += 1
     await send_truth(m)
+
+async def send_assoc(m: Message):
+    st = ASSOC_STATE[m.from_user.id]
+    step = st["step"]
+    if step >= len(ASSOCIATIONS):
+        score = st["score"]
+        best = record_assoc_result(m.from_user.id, score)
+        total = len(ASSOCIATIONS)
+        if score <= 7:
+            remark = "😕 Попробуй ещё раз!"
+        elif 8 <= score <= 11:
+            remark = "🙂 Неплохой результат!"
+        elif 12 <= score <= 14:
+            remark = "👍 Отлично!"
+        else:
+            remark = "🏆 Идеально!"
+        await m.answer(
+            f"Игра окончена! Правильных ответов: {score}/{total}\n{remark}\nРекорд: {best}",
+            reply_markup=MAIN_KB,
+        )
+        ASSOC_STATE.pop(m.from_user.id, None)
+        return
+    hint, correct = ASSOCIATIONS[step]
+    st["correct"] = correct
+    options = [correct] + sample([b for b in BRANDS if b != correct], 3)
+    shuffle(options)
+    await m.answer(
+        f"{step + 1}/{len(ASSOCIATIONS)}. {hint}",
+        reply_markup=kb(*(options + ["🏠 Главное меню"]), width=1),
+    )
+
+@game_router.message(lambda m: m.from_user.id in ASSOC_STATE)
+async def assoc_answer(m: Message):
+    if m.text == "🏠 Главное меню":
+        ASSOC_STATE.pop(m.from_user.id, None)
+        await m.answer("Главное меню", reply_markup=MAIN_KB)
+        return
+    st = ASSOC_STATE[m.from_user.id]
+    if m.text == st["correct"]:
+        st["score"] += 1
+        await m.answer("✅ Верно!")
+    else:
+        await m.answer(f"❌ Неверно. Правильный ответ: {st['correct']}")
+    st["step"] += 1
+    await send_assoc(m)
 
 
 @dp.message(F.photo)
