@@ -870,6 +870,44 @@ async def show_brand(m: Message):
     await handler(m)
 
 
+# Router to suggest brands when user enters a partial name
+suggest_router = Router()
+
+def _has_partial_match(m: Message) -> bool:
+    if m.from_user.id in SEARCH_ACTIVE or m.from_user.id in USER_STATE:
+        return False
+    if not m.text:
+        return False
+    normalized = normalize(m.text)
+    # Skip if exact match for existing alias
+    if normalized in ALIAS_MAP:
+        return False
+    for brand, (_, aliases) in BRANDS.items():
+        for alias in aliases + [brand]:
+            if normalized in normalize(alias):
+                return True
+    return False
+
+
+@suggest_router.message(_has_partial_match)
+async def suggest_brands(m: Message):
+    normalized = normalize(m.text)
+    matches: list[str] = []
+    for brand, (_, aliases) in BRANDS.items():
+        for alias in aliases + [brand]:
+            if normalized in normalize(alias):
+                matches.append(brand)
+                break
+    if not matches:
+        return
+    matches = list(dict.fromkeys(matches))
+    builder = ReplyKeyboardBuilder()
+    for brand in matches:
+        builder.add(KeyboardButton(text=brand))
+    builder.adjust(1)
+    await m.answer("Возможно, вы имели в виду:", reply_markup=builder.as_markup(resize_keyboard=True))
+
+
 # Map canonical brand names in lowercase for exact-match check
 CANONICAL_MAP = {name.lower(): name for name in BRANDS}
 
@@ -1091,6 +1129,7 @@ dp.include_routers(
     vodka_router,
     beer_router,
     wine_router,
+    suggest_router,
     brand_lookup_router,
     search_router,
     tests_router,
