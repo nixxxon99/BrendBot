@@ -859,8 +859,12 @@ for _name, (_, _aliases) in BRANDS.items():
 brand_lookup_router = Router()
 
 @brand_lookup_router.message(
-    lambda m: m.from_user.id not in USER_STATE
-    and normalize(m.text) in ALIAS_MAP
+    lambda m: (
+        m.from_user.id not in USER_STATE
+        and m.from_user.id not in GAME_STATE
+        and m.from_user.id not in ASSOC_STATE
+        and normalize(m.text) in ALIAS_MAP
+    )
 )
 async def show_brand(m: Message):
     """Send brand card regardless of how the button was created."""
@@ -873,7 +877,12 @@ async def show_brand(m: Message):
 suggest_router = Router()
 
 def _has_partial_match(m: Message) -> bool:
-    if m.from_user.id in SEARCH_ACTIVE or m.from_user.id in USER_STATE:
+    if (
+        m.from_user.id in SEARCH_ACTIVE
+        or m.from_user.id in USER_STATE
+        or m.from_user.id in GAME_STATE
+        or m.from_user.id in ASSOC_STATE
+    ):
         return False
     if not m.text:
         return False
@@ -1292,8 +1301,12 @@ dp.include_routers(
 
 
 @dp.message(
-    lambda m: m.from_user.id not in USER_STATE
-    and normalize(m.text) in ALIAS_MAP
+    lambda m: (
+        m.from_user.id not in USER_STATE
+        and m.from_user.id not in GAME_STATE
+        and m.from_user.id not in ASSOC_STATE
+        and normalize(m.text) in ALIAS_MAP
+    )
 )
 async def fallback_brand(m: Message):
     """Final handler to show brand info if text matches a known brand."""
