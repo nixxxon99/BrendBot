@@ -870,7 +870,7 @@ async def show_brand(m: Message):
     await handler(m)
 
 
-CANONICAL_MAP = {name.lower(): name for name in BRANDS}
+CANONICAL_MAP = {normalize(name): name for name in BRANDS}
 
 @search_router.message(F.text == "🔍 Поиск")
 async def search_start(m: Message):
@@ -882,20 +882,25 @@ async def search_start(m: Message):
 @search_router.message(lambda m: m.from_user.id in SEARCH_ACTIVE)
 async def process_search(m: Message):
     text = m.text.lower().strip()
+    normalized = normalize(m.text)
 
     if text in {"отмена", "назад"}:
         SEARCH_ACTIVE.discard(m.from_user.id)
         await m.answer("Поиск отменён", reply_markup=MAIN_KB)
         return
 
-    if text in CANONICAL_MAP:
+    if normalized in CANONICAL_MAP:
         SEARCH_ACTIVE.discard(m.from_user.id)
-        name = CANONICAL_MAP[text]
+        name = CANONICAL_MAP[normalized]
         handler, _ = BRANDS[name]
         await handler(m)
         return
 
-    matches = [name for name, (_, aliases) in BRANDS.items() if any(text in a for a in aliases)]
+    matches = [
+        name
+        for name, (_, aliases) in BRANDS.items()
+        if any(normalized in normalize(a) for a in aliases)
+    ]
 
     if matches:
         builder = ReplyKeyboardBuilder()
