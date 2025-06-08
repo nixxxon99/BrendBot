@@ -891,14 +891,6 @@ async def process_search(m: Message):
         await m.answer("Поиск отменён", reply_markup=MAIN_KB)
         return
 
-    # Если введён бренд точно (название или алиас)
-    if normalized in ALIAS_MAP:
-        SEARCH_ACTIVE.discard(m.from_user.id)
-        canonical = ALIAS_MAP[normalized]
-        handler, _ = BRANDS[canonical]
-        await handler(m)
-        await m.answer("Главное меню", reply_markup=MAIN_KB)
-        return
 
     # Ищем все бренды, где есть совпадение
     matches: list[str] = []
