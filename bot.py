@@ -762,6 +762,7 @@ async def jagermeister_info(m: Message):
 
 search_router = Router()
 SEARCH_ACTIVE: set[int] = set()
+SEARCH_RESULTS: dict[int, list[str]] = {}
 
 BRANDS: dict[str, tuple[callable, list[str]]] = {
     "Monkey Shoulder": (monkey_shoulder, [
@@ -884,20 +885,23 @@ async def search_start(m: Message):
 async def process_search(m: Message):
     text = m.text.strip()
     lower_text = text.lower()
-    normalized = normalize(text)
 
     if lower_text in {"отмена", "назад"}:
         SEARCH_ACTIVE.discard(m.from_user.id)
+        SEARCH_RESULTS.pop(m.from_user.id, None)
         await m.answer("Поиск отменён", reply_markup=MAIN_KB)
         return
 
-    if normalized in ALIAS_MAP:
+    # User selected a brand from suggestions
+    if m.from_user.id in SEARCH_RESULTS and text in SEARCH_RESULTS[m.from_user.id]:
         SEARCH_ACTIVE.discard(m.from_user.id)
-        name = ALIAS_MAP[normalized]
-        handler, _ = BRANDS[name]
+        SEARCH_RESULTS.pop(m.from_user.id, None)
+        handler, _ = BRANDS[text]
         await handler(m)
         await m.answer("Главное меню", reply_markup=MAIN_KB)
         return
+
+    normalized = normalize(text)
 
     matches = [
         name
@@ -906,6 +910,7 @@ async def process_search(m: Message):
     ]
 
     if matches:
+        SEARCH_RESULTS[m.from_user.id] = matches
         builder = ReplyKeyboardBuilder()
         for name in matches:
             builder.add(KeyboardButton(text=name))
@@ -913,6 +918,7 @@ async def process_search(m: Message):
         builder.adjust(1)
         await m.answer("Выберите бренд:", reply_markup=builder.as_markup(resize_keyboard=True))
     else:
+        SEARCH_RESULTS.pop(m.from_user.id, None)
         await m.answer("Ничего не найдено. Попробуйте ещё раз или нажмите Отмена.")
 from random import shuffle
 
