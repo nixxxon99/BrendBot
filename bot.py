@@ -119,7 +119,6 @@ def kb(*labels: str, width: int = 2) -> ReplyKeyboardMarkup:
 MAIN_KB = kb(
     "Меню брендов",
     "🔍 Поиск",
-    "📋 Тесты",
     "🍹 Коктейли",
     "🧠 Тренажёр знаний",
     "Моя статистика",
@@ -1056,6 +1055,7 @@ GAME_MENU_KB = kb(
     "🟢 Верю — не верю",
     "🔗 Ассоциации",
     "⚡️ Блиц",
+    "📋 Тесты",
     "Назад к меню",
     width=1,
 )
@@ -1236,7 +1236,7 @@ async def start_test(m: Message):
 @tests_router.message(lambda m: m.text == "Назад к меню")
 async def back_to_menu(m: Message):
     clear_user_state(m.from_user.id)
-    await m.answer("Главное меню", reply_markup=MAIN_KB)
+    await m.answer("Меню тренажёра", reply_markup=GAME_MENU_KB)
 
 async def ask(m: Message):
     st = USER_STATE[m.from_user.id]
@@ -1260,7 +1260,7 @@ async def ask(m: Message):
             reply_markup=ReplyKeyboardRemove()
         )
         USER_STATE.pop(m.from_user.id, None)
-        await m.answer("Выберите категорию:", reply_markup=MAIN_KB)
+        await m.answer("Выберите игру:", reply_markup=GAME_MENU_KB)
         return
 
     q, variants, correct = qset[step]
