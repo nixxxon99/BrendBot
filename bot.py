@@ -147,7 +147,6 @@ async def whisky_back(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
-@whisky_router.message(F.text == "Monkey Shoulder")
 @track_brand("Monkey Shoulder")
 async def monkey_shoulder(m: Message):
     await m.answer_photo(
@@ -167,7 +166,6 @@ async def monkey_shoulder(m: Message):
         parse_mode="HTML"
     )
 
-@whisky_router.message(F.text == "Glenfiddich 12 Years")
 @track_brand("Glenfiddich 12 Years")
 async def glenfiddich_12(m: Message):
     await m.answer_photo(
@@ -187,7 +185,6 @@ async def glenfiddich_12(m: Message):
         parse_mode="HTML"
     )
 
-@whisky_router.message(F.text == "Glenfiddich Fire & Cane")
 @track_brand("Glenfiddich Fire & Cane")
 async def fire_and_cane(m: Message):
     await m.answer_photo(
@@ -208,7 +205,6 @@ async def fire_and_cane(m: Message):
         parse_mode="HTML"
     )
 
-@whisky_router.message(F.text == "Glenfiddich IPA")
 @track_brand("Glenfiddich IPA")
 async def ipa_experiment(m: Message):
     await m.answer_photo(
@@ -229,7 +225,6 @@ async def ipa_experiment(m: Message):
         parse_mode="HTML"
     )
 
-@whisky_router.message(F.text == "Grant's Classic")
 @track_brand("Grant's Classic")
 async def grants_classic(m: Message):
     await m.answer_photo(
@@ -251,7 +246,6 @@ async def grants_classic(m: Message):
     )
 
 
-@whisky_router.message(F.text == "Grant's Summer Orange")
 @track_brand("Grant's Summer Orange")
 async def grants_summer_orange(m: Message):
     await m.answer_photo(
@@ -272,7 +266,6 @@ async def grants_summer_orange(m: Message):
         parse_mode="HTML"
     )
 
-@whisky_router.message(F.text == "Grant's Winter Dessert")
 @track_brand("Grant's Winter Dessert")
 async def grants_winter_dessert(m: Message):
     await m.answer_photo(
@@ -293,7 +286,6 @@ async def grants_winter_dessert(m: Message):
         parse_mode="HTML"
     )
 
-@whisky_router.message(F.text == "Grant's Tropical Fiesta")
 @track_brand("Grant's Tropical Fiesta")
 async def grants_tropical_fiesta(m: Message):
     await m.answer_photo(
@@ -314,7 +306,6 @@ async def grants_tropical_fiesta(m: Message):
         parse_mode="HTML"
     )
 
-@whisky_router.message(F.text == "Tullamore D.E.W.")
 @track_brand("Tullamore D.E.W.")
 async def tullamore_dew(m: Message):
     await m.answer_photo(
@@ -335,7 +326,6 @@ async def tullamore_dew(m: Message):
         parse_mode="HTML"
     )
 
-@whisky_router.message(F.text == "Tullamore D.E.W. Honey")
 @track_brand("Tullamore D.E.W. Honey")
 async def tullamore_honey(m: Message):
     await m.answer_photo(
@@ -373,7 +363,6 @@ async def vodka_back(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
-@vodka_router.message(F.text == "Серебрянка")
 @track_brand("Серебрянка")
 async def srebryanka(m: Message):
     await m.answer_photo(
@@ -391,7 +380,6 @@ async def srebryanka(m: Message):
         )
     )
 
-@vodka_router.message(F.text == "Reyka")
 @track_brand("Reyka")
 async def reyka(m: Message):
     await m.answer_photo(
@@ -410,7 +398,6 @@ async def reyka(m: Message):
         )
     )
     
-@vodka_router.message(F.text == "Finlandia")
 @track_brand("Finlandia")
 async def finlandia(m: Message):
     await m.answer_photo(
@@ -429,7 +416,6 @@ async def finlandia(m: Message):
         )
     )
 
-@vodka_router.message(F.text == "Зелёная марка")
 @track_brand("Зелёная марка")
 async def zelenaya_marka(m: Message):
     await m.answer_photo(
@@ -449,7 +435,6 @@ async def zelenaya_marka(m: Message):
     )
 
 
-@vodka_router.message(F.text == "Талка")
 @track_brand("Талка")
 async def talka(m: Message):
     await m.answer_photo(
@@ -467,7 +452,6 @@ async def talka(m: Message):
         )
     )
 
-@vodka_router.message(F.text == "Русский Стандарт")
 @track_brand("Русский Стандарт")
 async def russkiy_standart(m: Message):
     await m.answer_photo(
@@ -504,7 +488,6 @@ async def beer_back(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
-@beer_router.message(F.text == "Paulaner")
 @track_brand("Paulaner")
 async def paulaner(m: Message):
     await m.answer_photo(
@@ -522,7 +505,6 @@ async def paulaner(m: Message):
         )
     )    
 
-@beer_router.message(F.text == "Blue Moon")
 @track_brand("Blue Moon")
 async def blue_moon(m: Message):
     await m.answer_photo(
@@ -540,7 +522,6 @@ async def blue_moon(m: Message):
             "• Отлично заходит тем, кто не любит горечь IPA"
         )
     )
-@beer_router.message(F.text == "London Pride")
 @track_brand("London Pride")
 async def london_pride(m: Message):
     await m.answer_photo(
@@ -559,7 +540,6 @@ async def london_pride(m: Message):
         )
     )
 
-@beer_router.message(F.text == "Coors")
 @track_brand("Coors")
 async def coors(m: Message):
     await m.answer_photo(
@@ -578,7 +558,6 @@ async def coors(m: Message):
         )
     )
 
-@beer_router.message(F.text == "Staropramen")
 @track_brand("Staropramen")
 async def staropramen(m: Message):
     await m.answer_photo(
@@ -615,7 +594,6 @@ async def wine_back(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer("Категории", reply_markup=BRAND_MENU_KB)
 
-@wine_router.message(F.text == "Mateus Original Rosé")
 @track_brand("Mateus Original Rosé")
 async def mateus_rose(m: Message):
     await m.answer_photo(
@@ -635,7 +613,6 @@ async def mateus_rose(m: Message):
         )
     )
 
-@wine_router.message(F.text == "Undurraga Sauvignon Blanc")
 @track_brand("Undurraga Sauvignon Blanc")
 async def undurraga_sb(m: Message):
     await m.answer_photo(
@@ -655,7 +632,6 @@ async def undurraga_sb(m: Message):
         )
     )
 
-@wine_router.message(F.text == "Devil’s Rock Riesling")
 @track_brand("Devil’s Rock Riesling")
 async def devils_rock_riesling(m: Message):
     await m.answer_photo(
@@ -675,7 +651,6 @@ async def devils_rock_riesling(m: Message):
         )
     )
 
-@wine_router.message(F.text == "Piccola Nostra")
 @track_brand("Piccola Nostra")
 async def piccola_nostra(m: Message):
     await m.answer_photo(
@@ -695,7 +670,6 @@ async def piccola_nostra(m: Message):
         )
     )
 
-@wine_router.message(F.text == "Эль Санчес")
 @track_brand("Эль Санчес")
 async def el_sanches(m: Message):
     await m.answer_photo(
@@ -715,7 +689,6 @@ async def el_sanches(m: Message):
         )
     )
 
-@wine_router.message(F.text == "Шале де Сюд")
 @track_brand("Шале де Сюд")
 async def chale_de_sud(m: Message):
     await m.answer_photo(
@@ -737,7 +710,6 @@ async def chale_de_sud(m: Message):
     
 jager_router = Router()
 
-@jager_router.message(F.text == "🦌 Ягермейстер")
 @track_brand("Jägermeister")
 async def jagermeister_info(m: Message):
     clear_user_state(m.from_user.id)
@@ -1121,17 +1093,17 @@ async def get_file_id(m: Message):
     await m.answer(f"✅ Получен file_id:\n<code>{m.photo[-1].file_id}</code>")
 
 dp.include_routers(
+    search_router,
+    brand_lookup_router,
     main_router,
     whisky_router,
     vodka_router,
     beer_router,
     wine_router,
-    suggest_router,
-    brand_lookup_router,
-    search_router,
     tests_router,
     jager_router,
     brand_menu_router,
+    suggest_router,
 )
 
 
