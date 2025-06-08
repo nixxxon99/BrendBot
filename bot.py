@@ -889,11 +889,10 @@ async def process_search(m: Message):
         return
 
     if text in CANONICAL_MAP:
+        SEARCH_ACTIVE.discard(m.from_user.id)
         name = CANONICAL_MAP[text]
         handler, _ = BRANDS[name]
         await handler(m)
-        SEARCH_ACTIVE.discard(m.from_user.id)
-        await m.answer("Главное меню", reply_markup=MAIN_KB)
         return
 
     matches = [name for name, (_, aliases) in BRANDS.items() if any(text in a for a in aliases)]
