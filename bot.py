@@ -64,7 +64,8 @@ def track_brand(name: str):
     return decorator
 
 def clear_user_state(user_id: int) -> None:
-    """Reset quiz state for given user."""
+    """Reset search and quiz states for given user."""
+    SEARCH_ACTIVE.discard(user_id)
     USER_STATE.pop(user_id, None)
 
 def normalize(text: str) -> str:
@@ -759,7 +760,8 @@ async def jagermeister_info(m: Message):
 
 
 
-
+search_router = Router()
+SEARCH_ACTIVE: set[int] = set()
 
 BRANDS: dict[str, tuple[callable, list[str]]] = {
     "Monkey Shoulder": (monkey_shoulder, [
@@ -847,6 +849,123 @@ BRANDS: dict[str, tuple[callable, list[str]]] = {
         "jagermeister", "ягермейстер", "ягер", "jager"
     ]),
 }
+# Map normalized brand aliases to canonical names
+ALIAS_MAP: dict[str, str] = {}
+for _name, (_, _aliases) in BRANDS.items():
+    ALIAS_MAP[normalize(_name)] = _name
+    for _a in _aliases:
+        ALIAS_MAP[normalize(_a)] = _name
+
+brand_lookup_router = Router()
+
+@brand_lookup_router.message(
+    lambda m: m.from_user.id not in SEARCH_ACTIVE
+    and m.from_user.id not in USER_STATE
+    and normalize(m.text) in ALIAS_MAP
+)
+async def show_brand(m: Message):
+    clear_user_state(m.from_user.id)
+    canonical = ALIAS_MAP[normalize(m.text)]
+    handler, _ = BRANDS[canonical]
+    await handler(m)
+
+
+# Router to suggest brands when user enters a partial name
+suggest_router = Router()
+
+def _has_partial_match(m: Message) -> bool:
+    if m.from_user.id in SEARCH_ACTIVE or m.from_user.id in USER_STATE:
+        return False
+    if not m.text:
+        return False
+    normalized = normalize(m.text)
+    # Skip if exact match for existing alias
+    if normalized in ALIAS_MAP:
+        return False
+    for brand, (_, aliases) in BRANDS.items():
+        for alias in aliases + [brand]:
+            if normalized in normalize(alias):
+                return True
+    return False
+
+
+@suggest_router.message(_has_partial_match)
+async def suggest_brands(m: Message):
+    normalized = normalize(m.text)
+    matches: list[str] = []
+    for brand, (_, aliases) in BRANDS.items():
+        for alias in aliases + [brand]:
+            if normalized in normalize(alias):
+                matches.append(brand)
+                break
+    if not matches:
+        return
+    matches = list(dict.fromkeys(matches))
+    builder = ReplyKeyboardBuilder()
+    for brand in matches:
+        builder.add(KeyboardButton(text=brand))
+    builder.adjust(1)
+    await m.answer("Возможно, вы имели в виду:", reply_markup=builder.as_markup(resize_keyboard=True))
+
+
+# Map canonical brand names in lowercase for exact-match check
+CANONICAL_MAP = {name.lower(): name for name in BRANDS}
+
+@search_router.message(F.text == "🔍 Поиск")
+async def search_start(m: Message):
+    SEARCH_ACTIVE.add(m.from_user.id)
+    await m.answer(
+        "Введите часть названия бренда (например: глен, glen, грант, пауланер):",
+        reply_markup=ReplyKeyboardRemove(),
+    )
+
+@search_router.message(lambda m: m.from_user.id in SEARCH_ACTIVE)
+async def process_search(m: Message):
+    text = m.text.strip()
+    normalized = normalize(text)
+
+    if normalized in {"отмена", "назад"}:
+        SEARCH_ACTIVE.discard(m.from_user.id)
+        await m.answer("Поиск отменён", reply_markup=MAIN_KB)
+        return
+
+
+    # Ищем все бренды, где есть совпадение
+    matches: list[str] = []
+    for brand_name, (_, aliases) in BRANDS.items():
+        for alias in aliases + [brand_name]:
+            if normalized in normalize(alias):
+                matches.append(brand_name)
+                break
+
+    # Убираем дубликаты
+    matches = list(dict.fromkeys(matches))
+
+    if not matches:
+        await m.answer("Ничего не найдено. Попробуйте ещё раз или нажмите Отмена.")
+        return
+
+    if len(matches) == 1:
+        SEARCH_ACTIVE.discard(m.from_user.id)
+        handler, _ = BRANDS[matches[0]]
+        await handler(m)
+        await m.answer("Главное меню", reply_markup=MAIN_KB)
+        return
+
+    builder = ReplyKeyboardBuilder()
+    for brand in matches:
+        builder.add(KeyboardButton(text=brand))
+    builder.add(KeyboardButton(text="Отмена"))
+    builder.adjust(1)
+    await m.answer("Выберите бренд:", reply_markup=builder.as_markup(resize_keyboard=True))
+
+# Для обработки выбора из клавиатуры
+@search_router.message(lambda m: m.from_user.id in SEARCH_ACTIVE and m.text in BRANDS)
+async def brand_from_keyboard(m: Message):
+    SEARCH_ACTIVE.discard(m.from_user.id)
+    handler, _ = BRANDS[m.text]
+    await handler(m)
+    await m.answer("Главное меню", reply_markup=MAIN_KB)
 from random import shuffle
 
 tests_router = Router()
@@ -1010,10 +1129,26 @@ dp.include_routers(
     vodka_router,
     beer_router,
     wine_router,
+    suggest_router,
+    brand_lookup_router,
+    search_router,
     tests_router,
     jager_router,
     brand_menu_router,
 )
+
+
+@dp.message(
+    lambda m: m.from_user.id not in SEARCH_ACTIVE
+    and m.from_user.id not in USER_STATE
+    and normalize(m.text) in ALIAS_MAP
+)
+async def fallback_brand(m: Message):
+    """Final handler to show brand info if text matches a known brand."""
+    clear_user_state(m.from_user.id)
+    canonical = ALIAS_MAP[normalize(m.text)]
+    handler, _ = BRANDS[canonical]
+    await handler(m)
 
 
 
