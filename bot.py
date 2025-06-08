@@ -1132,7 +1132,7 @@ async def start_truth_game(m: Message):
     GAME_STATE[m.from_user.id] = {"step": 0, "score": 0}
     await m.answer(
         "Отвечайте Верю или Не верю на 20 утверждений о брендах.",
-        reply_markup=kb("Верю", "Не верю", width=2),
+        reply_markup=kb("Верю", "Не верю", "Главное меню", width=2),
     )
     await send_truth(m)
 
@@ -1166,7 +1166,7 @@ async def send_truth(m: Message):
     st["answer"] = truth
     await m.answer(
         f"{step + 1}/20. {statement}",
-        reply_markup=kb("Верю", "Не верю", width=2),
+        reply_markup=kb("Верю", "Не верю", "Главное меню", width=2),
     )
 
 @game_router.message(lambda m: m.from_user.id in GAME_STATE)
