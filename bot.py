@@ -921,10 +921,13 @@ async def search_start(m: Message):
 
 # Обработчик выбора бренда из клавиатуры должен иметь приоритет над общим
 # поиском, иначе сообщение перехватит `process_search` и бот не ответит.
-@search_router.message(lambda m: m.from_user.id in SEARCH_ACTIVE and m.text in BRANDS)
+@search_router.message(
+    lambda m: m.from_user.id in SEARCH_ACTIVE and normalize(m.text) in ALIAS_MAP
+)
 async def brand_from_keyboard(m: Message):
     SEARCH_ACTIVE.discard(m.from_user.id)
-    handler, _ = BRANDS[m.text]
+    canonical = ALIAS_MAP[normalize(m.text)]
+    handler, _ = BRANDS[canonical]
     await handler(m)
     await m.answer("Главное меню", reply_markup=MAIN_KB)
 
@@ -952,13 +955,6 @@ async def process_search(m: Message):
 
     if not matches:
         await m.answer("Ничего не найдено. Попробуйте ещё раз или нажмите Отмена.")
-        return
-
-    if len(matches) == 1:
-        SEARCH_ACTIVE.discard(m.from_user.id)
-        handler, _ = BRANDS[matches[0]]
-        await handler(m)
-        await m.answer("Главное меню", reply_markup=MAIN_KB)
         return
 
     builder = ReplyKeyboardBuilder()
