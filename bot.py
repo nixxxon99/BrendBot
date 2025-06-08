@@ -36,7 +36,8 @@ def get_stats(user_id: int) -> dict:
             "tests": 0,
             "brands": [],
             "points": 0,
-            "last": ""
+            "last": "",
+            "best_truth": 0
         }
     return USER_STATS[uid]
 
@@ -54,6 +55,16 @@ def record_test_result(user_id: int, points: int) -> None:
     stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_stats()
 
+def record_truth_result(user_id: int, points: int) -> int:
+    """Update user's best score for truth-or-dare game and total points."""
+    stats = get_stats(user_id)
+    if points > stats.get("best_truth", 0):
+        stats["best_truth"] = points
+    stats["points"] += points
+    stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    save_stats()
+    return stats["best_truth"]
+
 def track_brand(name: str):
     def decorator(func):
         async def wrapper(m: Message, *a, **kw):
@@ -68,6 +79,7 @@ def clear_user_state(user_id: int) -> None:
     """Reset search and quiz states for given user."""
     SEARCH_ACTIVE.discard(user_id)
     USER_STATE.pop(user_id, None)
+    GAME_STATE.pop(user_id, None)
 
 def normalize(text: str) -> str:
     """Return lowercased text without spaces or punctuation for matching."""
@@ -85,6 +97,7 @@ MAIN_KB = kb(
     "🔍 Поиск",
     "📋 Тесты",
     "🍹 Коктейли",
+    "🎮 Game Zone",
     "Моя статистика",
     width=2
 )
@@ -114,6 +127,7 @@ async def show_stats(m: Message):
         f"Пройдено тестов: {st['tests']}\n"
         f"Просмотрено брендов: {brands}\n"
         f"Набрано баллов: {st['points']}\n"
+        f"Рекорд в игре \"Верю — не верю\": {st['best_truth']}\n"
         f"Последняя активность: {last}",
         reply_markup=MAIN_KB
     )
@@ -930,6 +944,7 @@ async def process_search(m: Message):
 from random import shuffle
 
 tests_router = Router()
+game_router = Router()
 
 TESTS_MENU_KB = kb(
     "Тест: Jägermeister", "Тест: Виски", "Тест: Водка",
@@ -1000,7 +1015,33 @@ QUESTIONS = {
         }
 }
 
+GAME_MENU_KB = kb("🟢 Верю — не верю", "Назад к меню", width=1)
+
+TRUTH_QUESTIONS: list[tuple[str, bool]] = [
+    ("Monkey Shoulder — это односолодовый виски.", False),
+    ("Glenfiddich переводится как \"Долина оленя\".", True),
+    ("В составе Jägermeister — 56 трав и специй.", True),
+    ("Jack Daniel’s производится только в штате Теннесси.", True),
+    ("Grant’s — купажированный шотландский виски.", True),
+    ("Водка Серебрянка производится в Казахстане.", True),
+    ("Paulaner — это французское пиво.", False),
+    ("Glenfiddich IPA выдерживается в бочках из-под пива.", True),
+    ("Monkey Shoulder отлично подходит для коктейлей.", True),
+    ("В Grant’s Summer Orange есть вкус апельсина.", True),
+    ("Jack Daniel’s Tennessee Honey — это крепкий ром.", False),
+    ("Jägermeister традиционно подают сильно охлаждённым.", True),
+    ("Grant’s Tropical Fiesta — с нотами ананаса и манго.", True),
+    ("Glenfiddich Fire & Cane имеет копчёный вкус.", True),
+    ("Водка Серебрянка выпускается в пластиковых бутылках.", False),
+    ("Paulaner — один из старейших мюнхенских пивоваров.", True),
+    ("Jack Daniel’s используют только уголь из клёна для фильтрации.", True),
+    ("В Monkey Shoulder сочетаются солоды Glenfiddich, Balvenie и Kininvie.", True),
+    ("Jägermeister производится с 1887 года.", False),
+    ("Grant’s выпускает только один вид виски.", False),
+]
+
 USER_STATE: dict[int, dict] = {}
+GAME_STATE: dict[int, dict] = {}
 
 @tests_router.message(F.text == "📋 Тесты")
 async def tests_menu(m: Message):
@@ -1079,6 +1120,72 @@ async def test_answer(m: Message):
     st["step"] += 1
     await ask(m)
 
+# --- Game Zone handlers ---
+@main_router.message(F.text == "🎮 Game Zone")
+async def game_menu(m: Message):
+    clear_user_state(m.from_user.id)
+    await m.answer("Выберите игру:", reply_markup=GAME_MENU_KB)
+
+@game_router.message(F.text == "🟢 Верю — не верю")
+async def start_truth_game(m: Message):
+    clear_user_state(m.from_user.id)
+    GAME_STATE[m.from_user.id] = {"step": 0, "score": 0}
+    await m.answer(
+        "Отвечайте Верю или Не верю на 20 утверждений о брендах.",
+        reply_markup=kb("Верю", "Не верю", width=2),
+    )
+    await send_truth(m)
+
+@game_router.message(lambda m: m.text == "Назад к меню")
+async def game_back(m: Message):
+    clear_user_state(m.from_user.id)
+    await m.answer("Главное меню", reply_markup=MAIN_KB)
+
+async def send_truth(m: Message):
+    st = GAME_STATE[m.from_user.id]
+    step = st["step"]
+    if step >= len(TRUTH_QUESTIONS):
+        score = st["score"]
+        best = record_truth_result(m.from_user.id, score)
+        total = len(TRUTH_QUESTIONS)
+        if score <= 10:
+            remark = "😕 Попробуй ещё раз!"
+        elif 11 <= score <= 15:
+            remark = "🙂 Неплохой результат!"
+        elif 16 <= score <= 19:
+            remark = "👍 Отлично!"
+        else:
+            remark = "🏆 Идеально!"
+        await m.answer(
+            f"Игра окончена! Правильных ответов: {score}/{total}\n{remark}\nРекорд: {best}",
+            reply_markup=MAIN_KB,
+        )
+        GAME_STATE.pop(m.from_user.id, None)
+        return
+    statement, truth = TRUTH_QUESTIONS[step]
+    st["answer"] = truth
+    await m.answer(
+        f"{step + 1}/20. {statement}",
+        reply_markup=kb("Верю", "Не верю", width=2),
+    )
+
+@game_router.message(lambda m: m.from_user.id in GAME_STATE)
+async def truth_answer(m: Message):
+    if m.text not in {"Верю", "Не верю"}:
+        if m.text == "Главное меню":
+            GAME_STATE.pop(m.from_user.id, None)
+            await m.answer("Главное меню", reply_markup=MAIN_KB)
+        return
+    st = GAME_STATE[m.from_user.id]
+    user_val = m.text == "Верю"
+    if user_val == st["answer"]:
+        st["score"] += 1
+        await m.answer("✅ Верно!")
+    else:
+        await m.answer("❌ Неверно")
+    st["step"] += 1
+    await send_truth(m)
+
 
 @dp.message(F.photo)
 async def get_file_id(m: Message):
@@ -1092,6 +1199,7 @@ dp.include_routers(
     vodka_router,
     beer_router,
     wine_router,
+    game_router,
     tests_router,
     jager_router,
     brand_menu_router,
