@@ -109,7 +109,7 @@ MAIN_KB = kb(
     "🔍 Поиск",
     "📋 Тесты",
     "🍹 Коктейли",
-    "🎮 Game Zone",
+    "🧠 Тренажёр знаний",
     "Моя статистика",
     width=2
 )
@@ -1162,8 +1162,8 @@ async def test_answer(m: Message):
     st["step"] += 1
     await ask(m)
 
-# --- Game Zone handlers ---
-@main_router.message(F.text == "🎮 Game Zone")
+# --- Тренажёр знаний handlers ---
+@main_router.message(F.text == "🧠 Тренажёр знаний")
 async def game_menu(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer("Выберите игру:", reply_markup=GAME_MENU_KB)
