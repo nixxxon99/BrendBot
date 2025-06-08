@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import CommandStart
 from aiogram.types import (
     Message, KeyboardButton, ReplyKeyboardMarkup,
-    ReplyKeyboardRemove
+    ReplyKeyboardRemove, Contact
 )
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
@@ -17,6 +17,69 @@ if not API_TOKEN:
 logging.basicConfig(level=logging.INFO, format="%(asctime)s — %(levelname)s — %(message)s")
 bot: Bot = Bot(API_TOKEN, parse_mode="HTML")
 dp: Dispatcher = Dispatcher()
+
+ADMIN_IDS: set[int] = {int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x}
+
+INFO_FILE = "user_info.json"
+try:
+    with open(INFO_FILE, "r", encoding="utf-8") as f:
+        USER_INFO = json.load(f)
+except FileNotFoundError:
+    USER_INFO = {}
+
+def save_info() -> None:
+    with open(INFO_FILE, "w", encoding="utf-8") as f:
+        json.dump(USER_INFO, f, ensure_ascii=False, indent=2)
+
+def ensure_user(u) -> None:
+    uid = str(u.id)
+    info = USER_INFO.setdefault(uid, {})
+    changed = False
+    if info.get("username") != u.username:
+        info["username"] = u.username
+        changed = True
+    if info.get("first_name") != u.first_name:
+        info["first_name"] = u.first_name
+        changed = True
+    if info.get("last_name") != u.last_name:
+        info["last_name"] = u.last_name
+        changed = True
+    if changed:
+        save_info()
+
+def set_phone(user_id: int, phone: str) -> None:
+    info = USER_INFO.setdefault(str(user_id), {})
+    if info.get("phone") != phone:
+        info["phone"] = phone
+        save_info()
+
+def display_name(uid: int) -> str:
+    info = USER_INFO.get(str(uid), {})
+    name = (info.get("first_name", "") + " " + info.get("last_name", "")).strip()
+    username = info.get("username")
+    if username:
+        username = f"@{username}"
+    else:
+        username = ""
+    return " ".join(part for part in [name, username] if part).strip() or f"id {uid}"
+
+def format_stats(uid: int) -> str:
+    st = get_stats(uid)
+    info = USER_INFO.get(str(uid), {})
+    phone = info.get("phone", "—")
+    header = f"Имя: {display_name(uid)} (id: {uid}, телефон: {phone})"
+    categories = ["Виски", "Водка", "Пиво", "Вино", "Ликёр"]
+    counts = {c: 0 for c in categories}
+    for cat in st["brands"].values():
+        counts[cat] = counts.get(cat, 0) + 1
+    brand_lines = "\n".join(f"  — {c}: {counts.get(c, 0)}" for c in categories)
+    return (
+        f"{header}\n"
+        f"Лучший результат в Блице: {st['best_blitz']}\n"
+        f"Завершено тестов: {st['tests']}\n"
+        f"Правильных ответов: {st['points']}\n"
+        f"Просмотренные бренды:\n{brand_lines}"
+    )
 
 STATS_FILE = "user_stats.json"
 try:
@@ -95,7 +158,7 @@ def track_brand(name: str, category: str):
             kw.pop("bot", None)  # aiogram may inject bot kwarg
             record_brand_view(m.from_user.id, name, category)
             await func(m, *a, **kw)
-            await m.answer("Главное меню", reply_markup=MAIN_KB)
+            await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
         return wrapper
     return decorator
 
@@ -124,7 +187,38 @@ MAIN_KB = kb(
     "🍹 Коктейли",
     "🧠 Тренажёр знаний",
     "Моя статистика",
+    "📞 Поделиться контактом",
     width=2
+)
+
+ADMIN_MAIN_KB = kb(
+    "Меню брендов",
+    "🔍 Поиск",
+    "🍹 Коктейли",
+    "🧠 Тренажёр знаний",
+    "Моя статистика",
+    "📞 Поделиться контактом",
+    "👑 Админ-панель",
+    width=2
+)
+
+def main_kb(uid: int) -> ReplyKeyboardMarkup:
+    return ADMIN_MAIN_KB if uid in ADMIN_IDS else MAIN_KB
+
+ADMIN_KB = kb(
+    "📊 Топ-10 по блицу",
+    "📝 Топ-10 по тестам",
+    "🏷️ Топ-10 по брендам",
+    "🔍 Поиск по user_id",
+    "🔍 Поиск по имени",
+    "🔍 По номеру телефона",
+    "🏠 Главное меню",
+    width=1,
+)
+
+CONTACT_KB = ReplyKeyboardMarkup(
+    keyboard=[[KeyboardButton(text="Отправить номер", request_contact=True)], [KeyboardButton(text="Отмена")]],
+    resize_keyboard=True,
 )
 
 BRAND_MENU_KB = kb(
@@ -136,11 +230,13 @@ BRAND_MENU_KB = kb(
 
 main_router = Router()
 brand_menu_router = Router()
+admin_router = Router()
 
 @main_router.message(CommandStart())
 async def cmd_start(m: Message):
     clear_user_state(m.from_user.id)
-    await m.answer("Привет! Выбери категорию:", reply_markup=MAIN_KB)
+    ensure_user(m.from_user)
+    await m.answer("Привет! Выбери категорию:", reply_markup=main_kb(m.from_user.id))
 
 @main_router.message(F.text == "Моя статистика")
 async def show_stats(m: Message):
@@ -161,7 +257,7 @@ async def show_stats(m: Message):
         "Просмотренные бренды:\n"
         f"{brand_lines}\n"
         f"Последняя активность: {last}",
-        reply_markup=MAIN_KB,
+        reply_markup=main_kb(m.from_user.id),
     )
 
 @main_router.message(F.text == "Меню брендов")
@@ -169,10 +265,117 @@ async def show_brand_menu(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer("Выберите категорию:", reply_markup=BRAND_MENU_KB)
 
+@main_router.message(F.text == "📞 Поделиться контактом")
+async def request_phone(m: Message):
+    await m.answer("Нажмите кнопку, чтобы отправить ваш номер", reply_markup=CONTACT_KB)
+
+@dp.message(lambda m: m.contact is not None)
+async def save_phone(m: Message):
+    set_phone(m.from_user.id, m.contact.phone_number)
+    await m.answer("Спасибо! Телефон сохранён", reply_markup=main_kb(m.from_user.id))
+
+@main_router.message(lambda m: m.text == "👑 Админ-панель" and m.from_user.id in ADMIN_IDS)
+async def admin_menu(m: Message):
+    await m.answer("Админ-панель", reply_markup=ADMIN_KB)
+
+def _top_by(key: str) -> list[tuple[int, int]]:
+    data = []
+    for uid, st in USER_STATS.items():
+        data.append((int(uid), st.get(key, 0)))
+    data.sort(key=lambda x: x[1], reverse=True)
+    return data[:10]
+
+@admin_router.message(F.text == "📊 Топ-10 по блицу")
+async def top_blitz(m: Message):
+    lines = [f"{i}. {display_name(uid)} (id {uid}) — {score}" for i, (uid, score) in enumerate(_top_by("best_blitz"), 1)]
+    await m.answer("\n".join(lines) or "Нет данных", reply_markup=ADMIN_KB)
+
+@admin_router.message(F.text == "📝 Топ-10 по тестам")
+async def top_tests(m: Message):
+    lines = [f"{i}. {display_name(uid)} (id {uid}) — {score}" for i, (uid, score) in enumerate(_top_by("tests"), 1)]
+    await m.answer("\n".join(lines) or "Нет данных", reply_markup=ADMIN_KB)
+
+@admin_router.message(F.text == "🏷️ Топ-10 по брендам")
+async def top_brands(m: Message):
+    data = []
+    for uid, st in USER_STATS.items():
+        data.append((int(uid), len(st.get("brands", {}))))
+    data.sort(key=lambda x: x[1], reverse=True)
+    lines = [f"{i}. {display_name(uid)} (id {uid}) — {count}" for i, (uid, count) in enumerate(data[:10], 1)]
+    await m.answer("\n".join(lines) or "Нет данных", reply_markup=ADMIN_KB)
+
+@admin_router.message(F.text == "🔍 Поиск по user_id")
+async def ask_uid(m: Message):
+    ADMIN_STATE[m.from_user.id] = {"mode": "uid"}
+    await m.answer("Введите user_id:", reply_markup=ReplyKeyboardRemove())
+
+@admin_router.message(F.text == "🔍 Поиск по имени")
+async def ask_name(m: Message):
+    ADMIN_STATE[m.from_user.id] = {"mode": "name"}
+    await m.answer("Введите имя, фамилию или username:", reply_markup=ReplyKeyboardRemove())
+
+@admin_router.message(F.text == "🔍 По номеру телефона")
+async def ask_phone_admin(m: Message):
+    ADMIN_STATE[m.from_user.id] = {"mode": "phone"}
+    await m.answer("Введите номер телефона:", reply_markup=ReplyKeyboardRemove())
+
+@admin_router.message(F.text == "🏠 Главное меню")
+async def admin_to_main(m: Message):
+    ADMIN_STATE.pop(m.from_user.id, None)
+    await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
+
+@admin_router.message(lambda m: m.from_user.id in ADMIN_STATE)
+async def handle_admin_input(m: Message):
+    state = ADMIN_STATE.pop(m.from_user.id)
+    mode = state["mode"]
+    if mode == "uid":
+        uid = m.text.strip()
+        if uid.isdigit() and uid in USER_STATS:
+            await m.answer(format_stats(int(uid)), reply_markup=ADMIN_KB)
+        else:
+            await m.answer("Пользователь не найден", reply_markup=ADMIN_KB)
+    elif mode == "name":
+        q = m.text.lower()
+        matches = []
+        for uid, info in USER_INFO.items():
+            if (
+                q in (info.get("username") or "").lower()
+                or q in (info.get("first_name") or "").lower()
+                or q in (info.get("last_name") or "").lower()
+            ):
+                matches.append(int(uid))
+        if not matches:
+            await m.answer("Пользователь не найден", reply_markup=ADMIN_KB)
+        elif len(matches) == 1:
+            await m.answer(format_stats(matches[0]), reply_markup=ADMIN_KB)
+        else:
+            builder = ReplyKeyboardBuilder()
+            for uid in matches:
+                builder.add(KeyboardButton(text=f"{display_name(uid)} | {uid}"))
+            builder.adjust(1)
+            ADMIN_STATE[m.from_user.id] = {"mode": "choose", "list": matches}
+            await m.answer("Несколько совпадений. Выберите пользователя:", reply_markup=builder.as_markup(resize_keyboard=True))
+    elif mode == "phone":
+        phone = m.text.strip()
+        for uid, info in USER_INFO.items():
+            if info.get("phone") == phone:
+                await m.answer(format_stats(int(uid)), reply_markup=ADMIN_KB)
+                break
+        else:
+            await m.answer("Пользователь не найден", reply_markup=ADMIN_KB)
+    elif mode == "choose":
+        # user picks from previous list
+        for uid in state.get("list", []):
+            if m.text == f"{display_name(uid)} | {uid}":
+                await m.answer(format_stats(uid), reply_markup=ADMIN_KB)
+                break
+        else:
+            await m.answer("Пользователь не найден", reply_markup=ADMIN_KB)
+
 @brand_menu_router.message(F.text == "Назад")
 async def brand_menu_back(m: Message):
     clear_user_state(m.from_user.id)
-    await m.answer("Главное меню", reply_markup=MAIN_KB)
+    await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
 
 WHISKY_KB = kb(
     "Monkey Shoulder", "Glenfiddich 12 Years", "Glenfiddich Fire & Cane",
@@ -959,7 +1162,7 @@ async def process_search(m: Message):
 
     if normalized in {"отмена", "назад"}:
         SEARCH_ACTIVE.discard(m.from_user.id)
-        await m.answer("Поиск отменён", reply_markup=MAIN_KB)
+        await m.answer("Поиск отменён", reply_markup=main_kb(m.from_user.id))
         return
 
 
@@ -1216,6 +1419,7 @@ USER_STATE: dict[int, dict] = {}
 GAME_STATE: dict[int, dict] = {}
 ASSOC_STATE: dict[int, dict] = {}
 BLITZ_STATE: dict[int, dict] = {}
+ADMIN_STATE: dict[int, dict] = {}
 
 @tests_router.message(F.text == "📋 Тесты")
 async def tests_menu(m: Message):
@@ -1284,7 +1488,7 @@ async def test_answer(m: Message):
     st = USER_STATE[m.from_user.id]
     if m.text == "Главное меню":
         USER_STATE.pop(m.from_user.id, None)
-        await m.answer("Вы вернулись в главное меню", reply_markup=MAIN_KB)
+        await m.answer("Вы вернулись в главное меню", reply_markup=main_kb(m.from_user.id))
         return
     if m.text == st["correct"]:
         st["score"] += 1
@@ -1325,7 +1529,7 @@ async def start_blitz_game(m: Message):
 @game_router.message(lambda m: m.text == "Назад к меню")
 async def game_back(m: Message):
     clear_user_state(m.from_user.id)
-    await m.answer("Главное меню", reply_markup=MAIN_KB)
+    await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
 
 async def send_truth(m: Message):
     st = GAME_STATE[m.from_user.id]
@@ -1344,7 +1548,7 @@ async def send_truth(m: Message):
             remark = "🏆 Идеально!"
         await m.answer(
             f"Игра окончена! Правильных ответов: {score}/{total}\n{remark}\nРекорд: {best}",
-            reply_markup=MAIN_KB,
+            reply_markup=main_kb(m.from_user.id),
         )
         GAME_STATE.pop(m.from_user.id, None)
         return
@@ -1360,7 +1564,7 @@ async def truth_answer(m: Message):
     if m.text not in {"Верю", "Не верю"}:
         if m.text == "Главное меню":
             GAME_STATE.pop(m.from_user.id, None)
-            await m.answer("Главное меню", reply_markup=MAIN_KB)
+            await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
         return
     st = GAME_STATE[m.from_user.id]
     user_val = m.text == "Верю"
@@ -1389,7 +1593,7 @@ async def send_assoc(m: Message):
             remark = "🏆 Идеально!"
         await m.answer(
             f"Игра окончена! Правильных ответов: {score}/{total}\n{remark}\nРекорд: {best}",
-            reply_markup=MAIN_KB,
+            reply_markup=main_kb(m.from_user.id),
         )
         ASSOC_STATE.pop(m.from_user.id, None)
         return
@@ -1406,7 +1610,7 @@ async def send_assoc(m: Message):
 async def assoc_answer(m: Message):
     if m.text == "🏠 Главное меню":
         ASSOC_STATE.pop(m.from_user.id, None)
-        await m.answer("Главное меню", reply_markup=MAIN_KB)
+        await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
         return
     st = ASSOC_STATE[m.from_user.id]
     if m.text == st["correct"]:
@@ -1434,7 +1638,7 @@ async def send_blitz(m: Message):
             remark = "🏆 Идеально!"
         await m.answer(
             f"Игра окончена! Правильных ответов: {score}/{total}\n{remark}\nРекорд: {best}",
-            reply_markup=MAIN_KB,
+            reply_markup=main_kb(m.from_user.id),
         )
         BLITZ_STATE.pop(m.from_user.id, None)
         return
@@ -1451,7 +1655,7 @@ async def send_blitz(m: Message):
 async def blitz_answer(m: Message):
     if m.text == "🏠 Главное меню":
         BLITZ_STATE.pop(m.from_user.id, None)
-        await m.answer("Главное меню", reply_markup=MAIN_KB)
+        await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
         return
     st = BLITZ_STATE[m.from_user.id]
     if m.text == st["correct"]:
@@ -1471,6 +1675,7 @@ dp.include_routers(
     search_router,
     brand_lookup_router,
     main_router,
+    admin_router,
     whisky_router,
     vodka_router,
     beer_router,
