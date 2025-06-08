@@ -159,7 +159,6 @@ def track_brand(name: str, category: str):
             kw.pop("bot", None)  # aiogram may inject bot kwarg
             record_brand_view(m.from_user.id, name, category)
             await func(m, *a, **kw)
-            await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
         return wrapper
     return decorator
 
@@ -226,6 +225,39 @@ BRAND_MENU_KB = kb(
     "🦌 Ягермейстер", "Назад",
     width=2
 )
+
+def get_whisky_kb() -> ReplyKeyboardMarkup:
+    return kb(
+        "Monkey Shoulder", "Glenfiddich 12 Years", "Glenfiddich Fire & Cane",
+        "Glenfiddich IPA", "Grant's Classic", "Grant's Summer Orange",
+        "Grant's Winter Dessert", "Grant's Tropical Fiesta",
+        "Tullamore D.E.W.", "Tullamore D.E.W. Honey", "Назад к категориям",
+        width=2,
+    )
+
+def get_vodka_kb() -> ReplyKeyboardMarkup:
+    return kb(
+        "Серебрянка", "Reyka", "Finlandia", "Зелёная марка",
+        "Талка", "Русский Стандарт", "Назад к категориям", width=2,
+    )
+
+def get_beer_kb() -> ReplyKeyboardMarkup:
+    return kb(
+        "Paulaner", "Blue Moon",
+        "London Pride", "Coors",
+        "Staropramen", "Назад к категориям",
+        width=2,
+    )
+
+def get_wine_kb() -> ReplyKeyboardMarkup:
+    return kb(
+        "Mateus Original Rosé", "Undurraga Sauvignon Blanc",
+        "Devil’s Rock Riesling", "Piccola Nostra",
+        "Эль Санчес", "Шале де Сюд", "Назад к категориям", width=2,
+    )
+
+def get_jager_kb() -> ReplyKeyboardMarkup:
+    return kb("Jägermeister", "Назад к категориям", width=2)
 
 main_router = Router()
 brand_menu_router = Router()
@@ -376,20 +408,14 @@ async def brand_menu_back(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
 
-WHISKY_KB = kb(
-    "Monkey Shoulder", "Glenfiddich 12 Years", "Glenfiddich Fire & Cane",
-    "Glenfiddich IPA", "Grant's Classic", "Grant's Summer Orange",
-    "Grant's Winter Dessert", "Grant's Tropical Fiesta",
-    "Tullamore D.E.W.", "Tullamore D.E.W. Honey", "Назад к категориям",
-    width=2
-)
+
 
 whisky_router = Router()
 
 @whisky_router.message(F.text == "🥃 Виски")
 async def whisky_menu(m: Message):
     clear_user_state(m.from_user.id)
-    await m.answer("🥃 Выбери бренд виски:", reply_markup=WHISKY_KB)
+    await m.answer("🥃 Выбери бренд виски:", reply_markup=get_whisky_kb())
 
 @whisky_router.message(F.text == "Назад к категориям")
 async def whisky_back(m: Message):
@@ -412,6 +438,7 @@ async def monkey_shoulder(m: Message):
             "• Идеален для коктейлей: Old Fashioned, Whisky Sour\n"
             "• Три медные обезьяны на бутылке — символ тройного бленда"
         ),
+        reply_markup=get_whisky_kb(),
         parse_mode="HTML"
     )
 
@@ -431,6 +458,7 @@ async def glenfiddich_12(m: Message):
             "• Идеален для знакомства с миром односолодовых виски\n"
             "• Отлично подойдёт как в чистом виде, так и со льдом"
         ),
+        reply_markup=get_whisky_kb(),
         parse_mode="HTML"
     )
 
@@ -451,6 +479,7 @@ async def fire_and_cane(m: Message):
             "• Подходит тем, кто хочет попробовать «дым» впервые\n"
             "• Подчёркивает инновации Glenfiddich"
         ),
+        reply_markup=get_whisky_kb(),
         parse_mode="HTML"
     )
 
@@ -471,6 +500,7 @@ async def ipa_experiment(m: Message):
             "• Ограниченное издание — подчеркивает креативность бренда\n"
             "• Идеален для дегустаций и обсуждений вкусов"
         ),
+        reply_markup=get_whisky_kb(),
         parse_mode="HTML"
     )
 
@@ -491,6 +521,7 @@ async def grants_classic(m: Message):
             "• Идеален для повседневного употребления\n"
             "• Баланс цены и качества"
         ),
+        reply_markup=get_whisky_kb(),
         parse_mode="HTML"
     )
 
@@ -512,6 +543,7 @@ async def grants_summer_orange(m: Message):
             "• Современный стиль, ориентированный на молодую аудиторию\n"
             "• Хорош для вечеринок, летних террас и лёгкого ужина"
         ),
+        reply_markup=get_whisky_kb(),
         parse_mode="HTML"
     )
 
@@ -532,6 +564,7 @@ async def grants_winter_dessert(m: Message):
             "• Подходит для подарков и уютных зимних вечеров\n"
             "• Яркий пример вкусового виски без лишней крепости"
         ),
+        reply_markup=get_whisky_kb(),
         parse_mode="HTML"
     )
 
@@ -552,6 +585,7 @@ async def grants_tropical_fiesta(m: Message):
             "• Отличный выбор для любителей мягкого виски\n"
             "• Создан для новых поколений потребителей"
         ),
+        reply_markup=get_whisky_kb(),
         parse_mode="HTML"
     )
 
@@ -572,6 +606,7 @@ async def tullamore_dew(m: Message):
             "• Название D.E.W. — инициалы первого владельца: Daniel E. Williams\n"
             "• Слоган: ‘Give every man his D.E.W.’"
         ),
+        reply_markup=get_whisky_kb(),
         parse_mode="HTML"
     )
 
@@ -591,21 +626,19 @@ async def tullamore_honey(m: Message):
             "• Новинка для любителей мягких вкусов\n"
             "• Стильная бутылка с тиснением\n"
             "• Отличный выбор для женской аудитории и новичков"
-        )
+        ),
+        reply_markup=get_whisky_kb(),
+        parse_mode="HTML"
     )
 
 
-VODKA_KB = kb(
-    "Серебрянка", "Reyka", "Finlandia", "Зелёная марка",
-    "Талка", "Русский Стандарт", "Назад к категориям", width=2
-)
 
 vodka_router = Router()
 
 @vodka_router.message(F.text == "🧊 Водка")
 async def vodka_menu(m: Message):
     clear_user_state(m.from_user.id)
-    await m.answer("🧊 Выбери бренд водки:", reply_markup=VODKA_KB)
+    await m.answer("🧊 Выбери бренд водки:", reply_markup=get_vodka_kb())
 
 @vodka_router.message(F.text == "Назад к категориям")
 async def vodka_back(m: Message):
@@ -626,7 +659,9 @@ async def srebryanka(m: Message):
             "• Форматы: 0.5 и 0.7 л\n"
             "• Представлена в трёх вариантах: Классическая, Лайт (37,5%) и Rey\n"
             "• Идеальна в паре с солёными закусками и мясом"
-        )
+        ),
+        reply_markup=get_vodka_kb(),
+        parse_mode="HTML"
     )
 
 @track_brand("Reyka", "Водка")
@@ -644,7 +679,9 @@ async def reyka(m: Message):
             "• Крепость: 40 % ABV\n"
             "• Прекрасно подходит для чистого употребления и коктейлей\n"
             "• Часто ассоциируется с экологичностью и натуральностью"
-        )
+        ),
+        reply_markup=get_vodka_kb(),
+        parse_mode="HTML"
     )
     
 @track_brand("Finlandia", "Водка")
@@ -662,7 +699,9 @@ async def finlandia(m: Message):
             "• Идеальна в шотах, коктейлях или с лёгкой закуской\n"
             "• Символ северной чистоты и минимализма\n"
             "• Доступна в разных вариантах: Classic, Lime, Grapefruit и др."
-        )
+        ),
+        reply_markup=get_vodka_kb(),
+        parse_mode="HTML"
     )
 
 @track_brand("Зелёная марка", "Водка")
@@ -680,7 +719,9 @@ async def zelenaya_marka(m: Message):
             "• Линейка включает: Классическая, Пшеничная, Сибирская, Особая и др.\n"
             "• Упаковка оформлена в винтажном стиле — отсылка к традициям\n"
             "• Одна из самых узнаваемых марок в РФ и СНГ"
-        )
+        ),
+        reply_markup=get_vodka_kb(),
+        parse_mode="HTML"
     )
 
 
@@ -698,7 +739,9 @@ async def talka(m: Message):
             "• Природная тематика подчёркивается снежным дизайном бутылки\n"
             "• Подходит для подачи в чистом виде и для настоек\n"
             "• Часто выбирается потребителями за натуральность и мягкость"
-        )
+        ),
+        reply_markup=get_vodka_kb(),
+        parse_mode="HTML"
     )
 
 @track_brand("Русский Стандарт", "Водка")
@@ -715,22 +758,17 @@ async def russkiy_standart(m: Message):
             "• Крепость: 40 % ABV\n"
             "• Часто подаётся охлаждённой к русской кухне\n"
             "• Идеальна как в чистом виде, так и в коктейлях"
-        )
+        ),
+        reply_markup=get_vodka_kb(),
+        parse_mode="HTML"
     )
 
 beer_router = Router()
 
-BEER_KB = kb(
-    "Paulaner", "Blue Moon",
-    "London Pride", "Coors",
-    "Staropramen", "Назад к категориям",
-    width=2
-)
-
 @beer_router.message(F.text == "🍺 Пиво")
 async def beer_menu(m: Message):
     clear_user_state(m.from_user.id)
-    await m.answer("🍺 Выбери бренд пива:", reply_markup=BEER_KB)
+    await m.answer("🍺 Выбери бренд пива:", reply_markup=get_beer_kb())
 
 @beer_router.message(F.text == "Назад к категориям")
 async def beer_back(m: Message):
@@ -769,7 +807,9 @@ async def blue_moon(m: Message):
             "• Идеально для жаркой погоды и лёгких блюд\n"
             "• Стильная бутылка с лунным логотипом\n"
             "• Отлично заходит тем, кто не любит горечь IPA"
-        )
+        ),
+        reply_markup=get_beer_kb(),
+        parse_mode="HTML"
     )
 @track_brand("London Pride", "Пиво")
 async def london_pride(m: Message):
@@ -786,7 +826,9 @@ async def london_pride(m: Message):
             "• Фирменная бутылка с красным лейблом\n"
             "• Один из самых узнаваемых элей Великобритании\n"
             "• Истинный вкус лондонских пабов"
-        )
+        ),
+        reply_markup=get_beer_kb(),
+        parse_mode="HTML"
     )
 
 @track_brand("Coors", "Пиво")
@@ -804,7 +846,9 @@ async def coors(m: Message):
             "• Характерный серебристый дизайн банки\n"
             "• Часто используется в массовых и спортивных мероприятиях\n"
             "• Один из крупнейших брендов пива в США"
-        )
+        ),
+        reply_markup=get_beer_kb(),
+        parse_mode="HTML"
     )
 
 @track_brand("Staropramen", "Пиво")
@@ -822,21 +866,19 @@ async def staropramen(m: Message):
             "• Производится в Праге, экспортируется по всему миру\n"
             "• Идеален к мясным блюдам и сытным закускам\n"
             "• Один из символов чешской пивной культуры"
-        )
+        ),
+        reply_markup=get_beer_kb(),
+        parse_mode="HTML"
     )
 
-WINE_KB = kb(
-    "Mateus Original Rosé", "Undurraga Sauvignon Blanc",
-    "Devil’s Rock Riesling", "Piccola Nostra",
-    "Эль Санчес", "Шале де Сюд", "Назад к категориям", width=2
-)
+
 
 wine_router = Router()
 
 @wine_router.message(F.text == "🍷 Вино")
 async def wine_menu(m: Message):
     clear_user_state(m.from_user.id)
-    await m.answer("🍷 Выбери вино:", reply_markup=WINE_KB)
+    await m.answer("🍷 Выбери вино:", reply_markup=get_wine_kb())
 
 @wine_router.message(F.text == "Назад к категориям")
 async def wine_back(m: Message):
@@ -859,7 +901,9 @@ async def mateus_rose(m: Message):
             "• Подходит к лёгким закускам, салатам и морепродуктам\n"
             "• Узнаваемая пузатая бутылка — символ бренда\n"
             "• Отличный выбор для новичков и лёгких вечеринок"
-        )
+        ),
+        reply_markup=get_wine_kb(),
+        parse_mode="HTML"
     )
 
 @track_brand("Undurraga Sauvignon Blanc", "Вино")
@@ -878,7 +922,9 @@ async def undurraga_sb(m: Message):
             "• Подача при 8–10 °C\n"
             "• Современный стиль нового света\n"
             "• Надёжный выбор по доступной цене"
-        )
+        ),
+        reply_markup=get_wine_kb(),
+        parse_mode="HTML"
     )
 
 @track_brand("Devil’s Rock Riesling", "Вино")
@@ -897,7 +943,9 @@ async def devils_rock_riesling(m: Message):
             "• Подаётся охлаждённым до 8–10 °C\n"
             "• Современный стиль немецкого рислинга\n"
             "• Упаковка с запоминающимся дизайном и «дьявольским» характером"
-        )
+        ),
+        reply_markup=get_wine_kb(),
+        parse_mode="HTML"
     )
 
 @track_brand("Piccola Nostra", "Вино")
@@ -916,7 +964,9 @@ async def piccola_nostra(m: Message):
             "• Часто выбирается за сбалансированную сладость\n"
             "• Привлекательная цена и доступность\n"
             "• Подходит для тёплых вечеров и романтических встреч"
-        )
+        ),
+        reply_markup=get_wine_kb(),
+        parse_mode="HTML"
     )
 
 @track_brand("Эль Санчес", "Вино")
@@ -935,7 +985,9 @@ async def el_sanches(m: Message):
             "• Приятное вино на каждый день\n"
             "• Подходит как для застолий, так и для ужина на двоих\n"
             "• Популярно за доступную цену и дружелюбный вкус"
-        )
+        ),
+        reply_markup=get_wine_kb(),
+        parse_mode="HTML"
     )
 
 @track_brand("Шале де Сюд", "Вино")
@@ -954,16 +1006,29 @@ async def chale_de_sud(m: Message):
             "• Часто ассоциируется с летними вечеринками\n"
             "• Привлекательный внешний вид бутылки\n"
             "• Хороший выбор для новичков и поклонников сладких вин"
-        )
+        ),
+        reply_markup=get_wine_kb(),
+        parse_mode="HTML"
     )
     
 jager_router = Router()
 
+@jager_router.message(F.text == "🦌 Ягермейстер")
+async def jager_menu(m: Message):
+    clear_user_state(m.from_user.id)
+    await m.answer("Выберите бренд ликёра:", reply_markup=get_jager_kb())
+
+@jager_router.message(F.text == "Назад к категориям")
+async def jager_back(m: Message):
+    clear_user_state(m.from_user.id)
+    await m.answer("Категории", reply_markup=BRAND_MENU_KB)
+
+@jager_router.message(F.text == "Jägermeister")
 @track_brand("Jägermeister", "Ликёр")
 async def jagermeister_info(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer_photo(
-        photo="AgACAgIAAxkBAAIMG2g8Lf1fleLtxA30kh_bN-YFxQx9AAKM-DEbPHPgSXiVPEBRiD1GAQADAgADeAADNgQ",  
+        photo="AgACAgIAAxkBAAIMG2g8Lf1fleLtxA30kh_bN-YFxQx9AAKM-DEbPHPgSXiVPEBRiD1GAQADAgADeAADNgQ",
         caption=(
             "<b>Jägermeister</b>\n"
             "• Немецкий травяной ликёр с крепостью 35 %\n"
@@ -975,7 +1040,9 @@ async def jagermeister_info(m: Message):
             "• Классическая подача — шот, охлаждённый до -18°C\n"
             "• Отличный ингредиент для коктейлей (Jägerbomb и др.)\n"
             "• Логотип — олень с сияющим крестом между рогами"
-        )
+        ),
+        reply_markup=get_jager_kb(),
+        parse_mode="HTML"
     )
 
 
