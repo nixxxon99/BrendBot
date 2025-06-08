@@ -831,15 +831,18 @@ for _name, (_, _aliases) in BRANDS.items():
 brand_lookup_router = Router()
 
 @brand_lookup_router.message(
-    lambda m: m.from_user.id not in SEARCH_ACTIVE
-    and m.from_user.id not in USER_STATE
+    lambda m: m.from_user.id not in USER_STATE
     and normalize(m.text) in ALIAS_MAP
 )
 async def show_brand(m: Message):
+    """Send brand card regardless of how the button was created."""
+    was_search = m.from_user.id in SEARCH_ACTIVE
     clear_user_state(m.from_user.id)
     canonical = ALIAS_MAP[normalize(m.text)]
     handler, _ = BRANDS[canonical]
     await handler(m)
+    if was_search:
+        await m.answer("Главное меню", reply_markup=MAIN_KB)
 
 
 # Router to suggest brands when user enters a partial name
@@ -891,19 +894,11 @@ async def search_start(m: Message):
         reply_markup=ReplyKeyboardRemove(),
     )
 
-# Обработчик выбора бренда из клавиатуры должен иметь приоритет над общим
-# поиском, иначе сообщение перехватит `process_search` и бот не ответит.
-@search_router.message(
-    lambda m: m.from_user.id in SEARCH_ACTIVE and normalize(m.text) in ALIAS_MAP
-)
-async def brand_from_keyboard(m: Message):
-    SEARCH_ACTIVE.discard(m.from_user.id)
-    canonical = ALIAS_MAP[normalize(m.text)]
-    handler, _ = BRANDS[canonical]
-    await handler(m)
-    await m.answer("Главное меню", reply_markup=MAIN_KB)
 
-@search_router.message(lambda m: m.from_user.id in SEARCH_ACTIVE)
+@search_router.message(
+    lambda m: m.from_user.id in SEARCH_ACTIVE
+    and normalize(m.text) not in ALIAS_MAP
+)
 async def process_search(m: Message):
     text = m.text.strip()
     normalized = normalize(text)
@@ -1108,16 +1103,12 @@ dp.include_routers(
 
 
 @dp.message(
-    lambda m: m.from_user.id not in SEARCH_ACTIVE
-    and m.from_user.id not in USER_STATE
+    lambda m: m.from_user.id not in USER_STATE
     and normalize(m.text) in ALIAS_MAP
 )
 async def fallback_brand(m: Message):
     """Final handler to show brand info if text matches a known brand."""
-    clear_user_state(m.from_user.id)
-    canonical = ALIAS_MAP[normalize(m.text)]
-    handler, _ = BRANDS[canonical]
-    await handler(m)
+    await show_brand(m)
 
 
 
