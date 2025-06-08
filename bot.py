@@ -1078,7 +1078,11 @@ dp.include_routers(
 )
 
 
-@dp.message(lambda m: normalize(m.text) in ALIAS_MAP)
+@dp.message(
+    lambda m: m.from_user.id not in SEARCH_ACTIVE
+    and m.from_user.id not in USER_STATE
+    and normalize(m.text) in ALIAS_MAP
+)
 async def fallback_brand(m: Message):
     """Final handler to show brand info if text matches a known brand."""
     clear_user_state(m.from_user.id)
