@@ -919,6 +919,15 @@ async def search_start(m: Message):
         reply_markup=ReplyKeyboardRemove(),
     )
 
+# Обработчик выбора бренда из клавиатуры должен иметь приоритет над общим
+# поиском, иначе сообщение перехватит `process_search` и бот не ответит.
+@search_router.message(lambda m: m.from_user.id in SEARCH_ACTIVE and m.text in BRANDS)
+async def brand_from_keyboard(m: Message):
+    SEARCH_ACTIVE.discard(m.from_user.id)
+    handler, _ = BRANDS[m.text]
+    await handler(m)
+    await m.answer("Главное меню", reply_markup=MAIN_KB)
+
 @search_router.message(lambda m: m.from_user.id in SEARCH_ACTIVE)
 async def process_search(m: Message):
     text = m.text.strip()
@@ -958,14 +967,6 @@ async def process_search(m: Message):
     builder.add(KeyboardButton(text="Отмена"))
     builder.adjust(1)
     await m.answer("Выберите бренд:", reply_markup=builder.as_markup(resize_keyboard=True))
-
-# Для обработки выбора из клавиатуры
-@search_router.message(lambda m: m.from_user.id in SEARCH_ACTIVE and m.text in BRANDS)
-async def brand_from_keyboard(m: Message):
-    SEARCH_ACTIVE.discard(m.from_user.id)
-    handler, _ = BRANDS[m.text]
-    await handler(m)
-    await m.answer("Главное меню", reply_markup=MAIN_KB)
 from random import shuffle
 
 tests_router = Router()
