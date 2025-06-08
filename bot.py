@@ -183,20 +183,20 @@ def kb(*labels: str, width: int = 2) -> ReplyKeyboardMarkup:
     return builder.as_markup(resize_keyboard=True)
 
 MAIN_KB = kb(
-    "Меню брендов",
+    "🗂️ Меню брендов",
     "🔍 Поиск",
     "🍹 Коктейли",
     "🧠 Тренажёр знаний",
-    "Моя статистика",
+    "📊 Моя статистика",
     width=2
 )
 
 ADMIN_MAIN_KB = kb(
-    "Меню брендов",
+    "🗂️ Меню брендов",
     "🔍 Поиск",
     "🍹 Коктейли",
     "🧠 Тренажёр знаний",
-    "Моя статистика",
+    "📊 Моя статистика",
     "👑 Админ-панель",
     width=2
 )
@@ -237,7 +237,7 @@ async def cmd_start(m: Message):
     ensure_user(m.from_user)
     await m.answer("Привет! Выбери категорию:", reply_markup=main_kb(m.from_user.id))
 
-@main_router.message(F.text == "Моя статистика")
+@main_router.message(F.text == "📊 Моя статистика")
 async def show_stats(m: Message):
     clear_user_state(m.from_user.id)
     st = get_stats(m.from_user.id)
@@ -259,7 +259,7 @@ async def show_stats(m: Message):
         reply_markup=main_kb(m.from_user.id),
     )
 
-@main_router.message(F.text == "Меню брендов")
+@main_router.message(F.text == "🗂️ Меню брендов")
 async def show_brand_menu(m: Message):
     clear_user_state(m.from_user.id)
     await m.answer("Выберите категорию:", reply_markup=BRAND_MENU_KB)
