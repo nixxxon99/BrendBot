@@ -892,14 +892,15 @@ async def process_search(m: Message):
         await m.answer("Поиск отменён", reply_markup=MAIN_KB)
         return
 
-    # User selected a brand from suggestions
-    if m.from_user.id in SEARCH_RESULTS and text in SEARCH_RESULTS[m.from_user.id]:
+    # --- Если выбрали бренд из списка, показываем карточку ---
+    if text in BRANDS:
         SEARCH_ACTIVE.discard(m.from_user.id)
         SEARCH_RESULTS.pop(m.from_user.id, None)
         handler, _ = BRANDS[text]
         await handler(m)
         await m.answer("Главное меню", reply_markup=MAIN_KB)
         return
+    # ---------------------------------------------------------
 
     normalized = normalize(text)
 
