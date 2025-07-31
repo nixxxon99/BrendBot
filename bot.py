@@ -89,6 +89,46 @@ try:
 except FileNotFoundError:
     USER_STATS = {}
 
+HISTORY_FILE = "stats_history.json"
+try:
+    with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+        STATS_HISTORY = json.load(f)
+except FileNotFoundError:
+    STATS_HISTORY = {"daily": {}, "monthly": {}}
+
+def save_history() -> None:
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(STATS_HISTORY, f, ensure_ascii=False, indent=2)
+
+def record_history(event: str) -> None:
+    now = datetime.now()
+    day = now.strftime("%Y-%m-%d")
+    month = now.strftime("%Y-%m")
+    for key, bucket in [
+        (day, STATS_HISTORY.setdefault("daily", {})),
+        (month, STATS_HISTORY.setdefault("monthly", {})),
+    ]:
+        data = bucket.setdefault(
+            key,
+            {"tests": 0, "brands": 0, "truth": 0, "assoc": 0, "blitz": 0},
+        )
+        data[event] = data.get(event, 0) + 1
+    save_history()
+
+def format_activity(period: str, limit: int = 10) -> str:
+    hist = STATS_HISTORY.get(period, {})
+    if not hist:
+        return ""
+    lines = []
+    for key in sorted(hist.keys(), reverse=True)[:limit]:
+        data = hist[key]
+        lines.append(
+            f"{key}: тесты {data.get('tests', 0)}, верю {data.get('truth', 0)}, "
+            f"ассоциации {data.get('assoc', 0)}, блиц {data.get('blitz', 0)}, "
+            f"бренды {data.get('brands', 0)}"
+        )
+    return "\n".join(lines)
+
 def save_stats() -> None:
     with open(STATS_FILE, "w", encoding="utf-8") as f:
         json.dump(USER_STATS, f, ensure_ascii=False, indent=2)
@@ -114,6 +154,7 @@ def record_brand_view(user_id: int, brand: str, category: str) -> None:
         stats["brands"][brand] = category
     stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_stats()
+    record_history("brands")
 
 def record_test_result(user_id: int, points: int) -> None:
     stats = get_stats(user_id)
@@ -121,6 +162,7 @@ def record_test_result(user_id: int, points: int) -> None:
     stats["points"] += points
     stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_stats()
+    record_history("tests")
 
 def record_truth_result(user_id: int, points: int) -> int:
     """Update user's best score for truth-or-dare game and total points."""
@@ -130,6 +172,7 @@ def record_truth_result(user_id: int, points: int) -> int:
     stats["points"] += points
     stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_stats()
+    record_history("truth")
     return stats["best_truth"]
 
 def record_assoc_result(user_id: int, points: int) -> int:
@@ -140,6 +183,7 @@ def record_assoc_result(user_id: int, points: int) -> int:
     stats["points"] += points
     stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_stats()
+    record_history("assoc")
     return stats["best_assoc"]
 
 def record_blitz_result(user_id: int, points: int) -> int:
@@ -150,6 +194,7 @@ def record_blitz_result(user_id: int, points: int) -> int:
     stats["points"] += points
     stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_stats()
+    record_history("blitz")
     return stats["best_blitz"]
 
 def track_brand(name: str, category: str):
@@ -207,6 +252,8 @@ ADMIN_KB = kb(
     "📊 Топ-10 по блицу",
     "📝 Топ-10 по тестам",
     "🏷️ Топ-10 по брендам",
+    "📈 Активность по дням",
+    "📆 Активность по месяцам",
     "🔍 Поиск по user_id",
     "🔍 Поиск по имени",
     "🔍 По номеру телефона",
@@ -334,6 +381,16 @@ async def top_brands(m: Message):
     data.sort(key=lambda x: x[1], reverse=True)
     lines = [f"{i}. {display_name(uid)} (id {uid}) — {count}" for i, (uid, count) in enumerate(data[:10], 1)]
     await m.answer("\n".join(lines) or "Нет данных", reply_markup=ADMIN_KB)
+
+@admin_router.message(F.text == "📈 Активность по дням")
+async def show_daily(m: Message):
+    lines = format_activity("daily")
+    await m.answer(lines or "Нет данных", reply_markup=ADMIN_KB)
+
+@admin_router.message(F.text == "📆 Активность по месяцам")
+async def show_monthly(m: Message):
+    lines = format_activity("monthly")
+    await m.answer(lines or "Нет данных", reply_markup=ADMIN_KB)
 
 @admin_router.message(F.text == "🔍 Поиск по user_id")
 async def ask_uid(m: Message):
