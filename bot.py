@@ -1,6 +1,9 @@
 import os
 import logging
 import json
+import atexit
+import signal
+import sys
 from datetime import datetime
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import CommandStart
@@ -1823,6 +1826,19 @@ dp.include_routers(
 async def fallback_brand(m: Message):
     """Final handler to show brand info if text matches a known brand."""
     await show_brand(m)
+
+
+# --- ensure stats are persisted on shutdown ---
+def _persist_all() -> None:
+    """Save all data files immediately."""
+    save_info()
+    save_stats()
+    save_history()
+
+
+atexit.register(_persist_all)
+for _sig in (signal.SIGTERM, signal.SIGINT):
+    signal.signal(_sig, lambda s, f: (_persist_all(), sys.exit(0)))
 
 
 
