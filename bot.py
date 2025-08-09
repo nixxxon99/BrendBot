@@ -5,6 +5,8 @@ import atexit
 import signal
 import sys
 from datetime import datetime
+from zoneinfo import ZoneInfo
+from redis import Redis
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import CommandStart
 from aiogram.types import (
@@ -23,6 +25,9 @@ dp: Dispatcher = Dispatcher()
 
 ADMIN_IDS = {1294415669}
 
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+redis = Redis.from_url(REDIS_URL, decode_responses=True)
+TZ = ZoneInfo("Asia/Almaty")
 
 INFO_FILE = "user_info.json"
 try:
@@ -85,120 +90,132 @@ def format_stats(uid: int) -> str:
         f"Просмотренные бренды:\n{brand_lines}"
     )
 
-STATS_FILE = "user_stats.json"
-try:
-    with open(STATS_FILE, "r", encoding="utf-8") as f:
-        USER_STATS = json.load(f)
-except FileNotFoundError:
-    USER_STATS = {}
+DEFAULT_STATS = {
+    "tests": 0,
+    "brands": {},
+    "points": 0,
+    "last": "",
+    "best_truth": 0,
+    "best_assoc": 0,
+    "best_blitz": 0,
+}
 
-HISTORY_FILE = "stats_history.json"
-try:
-    with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-        STATS_HISTORY = json.load(f)
-except FileNotFoundError:
-    STATS_HISTORY = {"daily": {}, "monthly": {}}
+def _stats_key(uid: int, period: str = "total") -> str:
+    if period == "daily":
+        day = datetime.now(TZ).strftime("%Y-%m-%d")
+        return f"user:{uid}:stats:daily:{day}"
+    return f"user:{uid}:stats"
 
-def save_history() -> None:
-    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-        json.dump(STATS_HISTORY, f, ensure_ascii=False, indent=2)
+def get_stats(user_id: int, period: str = "total") -> dict:
+    key = _stats_key(user_id, period)
+    data = redis.get(key)
+    if data is None:
+        redis.set(key, json.dumps(DEFAULT_STATS))
+        return DEFAULT_STATS.copy()
+    st = json.loads(data)
+    st.setdefault("brands", {})
+    return st
+
+def save_stats(user_id: int, stats: dict, period: str = "total") -> None:
+    key = _stats_key(user_id, period)
+    redis.set(key, json.dumps(stats))
 
 def record_history(event: str) -> None:
-    now = datetime.now()
-    day = now.strftime("%Y-%m-%d")
-    month = now.strftime("%Y-%m")
-    for key, bucket in [
-        (day, STATS_HISTORY.setdefault("daily", {})),
-        (month, STATS_HISTORY.setdefault("monthly", {})),
-    ]:
-        data = bucket.setdefault(
-            key,
-            {"tests": 0, "brands": 0, "truth": 0, "assoc": 0, "blitz": 0},
-        )
-        data[event] = data.get(event, 0) + 1
-    save_history()
+    now = datetime.now(TZ)
+    day_key = now.strftime("%Y-%m-%d")
+    redis.hincrby(f"history:daily:{day_key}", event, 1)
+    redis.hincrby("history:total", event, 1)
 
 def format_activity(period: str, limit: int = 10) -> str:
-    hist = STATS_HISTORY.get(period, {})
-    if not hist:
-        return ""
-    lines = []
-    for key in sorted(hist.keys(), reverse=True)[:limit]:
-        data = hist[key]
-        lines.append(
-            f"{key}: тесты {data.get('tests', 0)}, верю {data.get('truth', 0)}, "
+    if period == "daily":
+        keys = sorted(redis.keys("history:daily:*"), reverse=True)[:limit]
+        lines = []
+        for k in keys:
+            day = k.split(":")[-1]
+            data = redis.hgetall(k)
+            lines.append(
+                f"{day}: тесты {data.get('tests', 0)}, верю {data.get('truth', 0)}, "
+                f"ассоциации {data.get('assoc', 0)}, блиц {data.get('blitz', 0)}, "
+                f"бренды {data.get('brands', 0)}"
+            )
+        return "\n".join(lines)
+    elif period == "total":
+        data = redis.hgetall("history:total")
+        if not data:
+            return ""
+        return (
+            f"Всего: тесты {data.get('tests', 0)}, верю {data.get('truth', 0)}, "
             f"ассоциации {data.get('assoc', 0)}, блиц {data.get('blitz', 0)}, "
             f"бренды {data.get('brands', 0)}"
         )
-    return "\n".join(lines)
+    return ""
 
-def save_stats() -> None:
-    with open(STATS_FILE, "w", encoding="utf-8") as f:
-        json.dump(USER_STATS, f, ensure_ascii=False, indent=2)
-
-def get_stats(user_id: int) -> dict:
-    uid = str(user_id)
-    if uid not in USER_STATS:
-        USER_STATS[uid] = {
-            "tests": 0,
-            "brands": {},  # {brand_name: category}
-            "points": 0,
-            "last": "",
-            "best_truth": 0,
-            "best_assoc": 0,
-            "best_blitz": 0
-        }
-    return USER_STATS[uid]
+def _now_str() -> str:
+    return datetime.now(TZ).strftime("%Y-%m-%d %H:%M:%S")
 
 def record_brand_view(user_id: int, brand: str, category: str) -> None:
     """Store the brand under its category for the user."""
-    stats = get_stats(user_id)
-    if brand not in stats["brands"]:
-        stats["brands"][brand] = category
-    stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    save_stats()
+    for period in ("total", "daily"):
+        stats = get_stats(user_id, period)
+        if brand not in stats["brands"]:
+            stats["brands"][brand] = category
+        stats["last"] = _now_str()
+        save_stats(user_id, stats, period)
     record_history("brands")
 
 def record_test_result(user_id: int, points: int) -> None:
-    stats = get_stats(user_id)
-    stats["tests"] += 1
-    stats["points"] += points
-    stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    save_stats()
+    for period in ("total", "daily"):
+        stats = get_stats(user_id, period)
+        stats["tests"] = stats.get("tests", 0) + 1
+        stats["points"] = stats.get("points", 0) + points
+        stats["last"] = _now_str()
+        save_stats(user_id, stats, period)
     record_history("tests")
 
 def record_truth_result(user_id: int, points: int) -> int:
     """Update user's best score for truth-or-dare game and total points."""
-    stats = get_stats(user_id)
-    if points > stats.get("best_truth", 0):
-        stats["best_truth"] = points
-    stats["points"] += points
-    stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    save_stats()
+    best = 0
+    for period in ("total", "daily"):
+        stats = get_stats(user_id, period)
+        if points > stats.get("best_truth", 0):
+            stats["best_truth"] = points
+        stats["points"] = stats.get("points", 0) + points
+        stats["last"] = _now_str()
+        save_stats(user_id, stats, period)
+        if period == "total":
+            best = stats["best_truth"]
     record_history("truth")
-    return stats["best_truth"]
+    return best
 
 def record_assoc_result(user_id: int, points: int) -> int:
     """Update user's best score for associations game and total points."""
-    stats = get_stats(user_id)
-    if points > stats.get("best_assoc", 0):
-        stats["best_assoc"] = points
-    stats["points"] += points
-    stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    save_stats()
+    best = 0
+    for period in ("total", "daily"):
+        stats = get_stats(user_id, period)
+        if points > stats.get("best_assoc", 0):
+            stats["best_assoc"] = points
+        stats["points"] = stats.get("points", 0) + points
+        stats["last"] = _now_str()
+        save_stats(user_id, stats, period)
+        if period == "total":
+            best = stats["best_assoc"]
     record_history("assoc")
-    return stats["best_assoc"]
+    return best
 
 def record_blitz_result(user_id: int, points: int) -> int:
     """Update user's best score for blitz game and total points."""
-    stats = get_stats(user_id)
-    if points > stats.get("best_blitz", 0):
-        stats["best_blitz"] = points
-    stats["points"] += points
-    stats["last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    save_stats()
+    best = 0
+    for period in ("total", "daily"):
+        stats = get_stats(user_id, period)
+        if points > stats.get("best_blitz", 0):
+            stats["best_blitz"] = points
+        stats["points"] = stats.get("points", 0) + points
+        stats["last"] = _now_str()
+        save_stats(user_id, stats, period)
+        if period == "total":
+            best = stats["best_blitz"]
     record_history("blitz")
-    return stats["best_blitz"]
+    return best
 
 def track_brand(name: str, category: str):
     """Decorator to record a brand view with its category."""
@@ -255,8 +272,8 @@ ADMIN_KB = kb(
     "📊 Топ-10 по блицу",
     "📝 Топ-10 по тестам",
     "🏷️ Топ-10 по брендам",
-    "📈 Активность по дням",
-    "📆 Активность по месяцам",
+    "📈 Суточная активность",
+    "📊 Накопительная активность",
     "🔍 Поиск по user_id",
     "🔍 Поиск по имени",
     "🔍 По номеру телефона",
@@ -359,10 +376,12 @@ async def save_phone(m: Message):
 async def admin_menu(m: Message):
     await m.answer("Админ-панель", reply_markup=ADMIN_KB)
 
-def _top_by(key: str) -> list[tuple[int, int]]:
+def _top_by(field: str) -> list[tuple[int, int]]:
     data = []
-    for uid, st in USER_STATS.items():
-        data.append((int(uid), st.get(key, 0)))
+    for key in redis.scan_iter("user:*:stats"):
+        uid = int(key.split(":")[1])
+        st = json.loads(redis.get(key))
+        data.append((uid, int(st.get(field, 0))))
     data.sort(key=lambda x: x[1], reverse=True)
     return data[:10]
 
@@ -379,20 +398,22 @@ async def top_tests(m: Message):
 @admin_router.message(F.text == "🏷️ Топ-10 по брендам")
 async def top_brands(m: Message):
     data = []
-    for uid, st in USER_STATS.items():
-        data.append((int(uid), len(st.get("brands", {}))))
+    for key in redis.scan_iter("user:*:stats"):
+        uid = int(key.split(":")[1])
+        st = json.loads(redis.get(key))
+        data.append((uid, len(st.get("brands", {}))))
     data.sort(key=lambda x: x[1], reverse=True)
     lines = [f"{i}. {display_name(uid)} (id {uid}) — {count}" for i, (uid, count) in enumerate(data[:10], 1)]
     await m.answer("\n".join(lines) or "Нет данных", reply_markup=ADMIN_KB)
 
-@admin_router.message(F.text == "📈 Активность по дням")
+@admin_router.message(F.text == "📈 Суточная активность")
 async def show_daily(m: Message):
     lines = format_activity("daily")
     await m.answer(lines or "Нет данных", reply_markup=ADMIN_KB)
 
-@admin_router.message(F.text == "📆 Активность по месяцам")
-async def show_monthly(m: Message):
-    lines = format_activity("monthly")
+@admin_router.message(F.text == "📊 Накопительная активность")
+async def show_total(m: Message):
+    lines = format_activity("total")
     await m.answer(lines or "Нет данных", reply_markup=ADMIN_KB)
 
 @admin_router.message(F.text == "🔍 Поиск по user_id")
@@ -421,7 +442,7 @@ async def handle_admin_input(m: Message):
     mode = state["mode"]
     if mode == "uid":
         uid = m.text.strip()
-        if uid.isdigit() and uid in USER_STATS:
+        if uid.isdigit() and redis.exists(_stats_key(int(uid))):
             await m.answer(format_stats(int(uid)), reply_markup=ADMIN_KB)
         else:
             await m.answer("Пользователь не найден", reply_markup=ADMIN_KB)
@@ -1832,8 +1853,6 @@ async def fallback_brand(m: Message):
 def _persist_all() -> None:
     """Save all data files immediately."""
     save_info()
-    save_stats()
-    save_history()
 
 
 atexit.register(_persist_all)
