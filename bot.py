@@ -26,7 +26,48 @@ dp: Dispatcher = Dispatcher()
 ADMIN_IDS = {1294415669}
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-redis = Redis.from_url(REDIS_URL, decode_responses=True)
+try:
+    redis = Redis.from_url(REDIS_URL, decode_responses=True)
+    redis.ping()
+except Exception as e:  # Redis unavailable
+    logging.warning("Redis unavailable, using in-memory store: %s", e)
+
+    class MemoryRedis:
+        """Minimal in-memory replacement for Redis used in tests."""
+
+        def __init__(self) -> None:
+            self.data: dict[str, str] = {}
+            self.hashes: dict[str, dict[str, int]] = {}
+
+        def get(self, key: str):
+            return self.data.get(key)
+
+        def set(self, key: str, value: str) -> None:
+            self.data[key] = value
+
+        def hincrby(self, name: str, key: str, amount: int) -> None:
+            h = self.hashes.setdefault(name, {})
+            h[key] = h.get(key, 0) + amount
+
+        def hgetall(self, name: str) -> dict[str, int]:
+            return self.hashes.get(name, {}).copy()
+
+        def keys(self, pattern: str) -> list[str]:
+            if pattern.endswith("*"):
+                prefix = pattern[:-1]
+                return [k for k in self.hashes.keys() if k.startswith(prefix)]
+            return [pattern] if pattern in self.hashes else []
+
+        def scan_iter(self, pattern: str):
+            if pattern.endswith("*"):
+                prefix = pattern[:-1]
+                return (k for k in self.data.keys() if k.startswith(prefix))
+            return iter([pattern]) if pattern in self.data else iter([])
+
+        def exists(self, key: str) -> bool:
+            return key in self.data
+
+    redis = MemoryRedis()
 TZ = ZoneInfo("Asia/Almaty")
 
 INFO_FILE = "user_info.json"
