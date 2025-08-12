@@ -15,7 +15,11 @@ from aiogram.types import (
     ReplyKeyboardRemove, Contact
 )
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
+from dotenv import load_dotenv
 from routers.ai_live import router as ai_live_router
+
+# Load environment variables from .env if present
+load_dotenv()
 
 API_TOKEN = os.getenv("TOKEN")
 if not API_TOKEN:
