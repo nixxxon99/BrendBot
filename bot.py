@@ -7,14 +7,15 @@ import sys
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from redis import Redis
+from random import shuffle, sample
 from aiogram import Bot, Dispatcher, Router, F
 from aiogram.filters import CommandStart
 from aiogram.types import (
     Message, KeyboardButton, ReplyKeyboardMarkup,
     ReplyKeyboardRemove, Contact
 )
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
-from routers.ai_helper import router as ai_helper_router
+from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
+from routers.ai_live import router as ai_live_router
 
 API_TOKEN = os.getenv("TOKEN")
 if not API_TOKEN:
@@ -270,8 +271,7 @@ def track_brand(name: str, category: str):
     return decorator
 
 def clear_user_state(user_id: int) -> None:
-    """Reset search and quiz states for given user."""
-    SEARCH_ACTIVE.discard(user_id)
+    """Reset quiz states for given user."""
     USER_STATE.pop(user_id, None)
     GAME_STATE.pop(user_id, None)
     ASSOC_STATE.pop(user_id, None)
@@ -290,7 +290,6 @@ def kb(*labels: str, width: int = 2) -> ReplyKeyboardMarkup:
 
 MAIN_KB = kb(
     "🗂️ Меню брендов",
-    "🔍 Поиск",
     "🍹 Коктейли",
     "🧠 Тренажёр знаний",
     "📊 Моя статистика",
@@ -299,7 +298,6 @@ MAIN_KB = kb(
 
 ADMIN_MAIN_KB = kb(
     "🗂️ Меню брендов",
-    "🔍 Поиск",
     "🍹 Коктейли",
     "🧠 Тренажёр знаний",
     "📊 Моя статистика",
@@ -309,6 +307,18 @@ ADMIN_MAIN_KB = kb(
 
 def main_kb(uid: int) -> ReplyKeyboardMarkup:
     return ADMIN_MAIN_KB if uid in ADMIN_IDS else MAIN_KB
+
+def ai_entry_kb():
+    kb = InlineKeyboardBuilder()
+    kb.button(text="🤖 AI-помощник", callback_data="ai:enter")
+    return kb.as_markup()
+
+async def send_main_menu(m: Message, text: str):
+    await m.answer(text, reply_markup=main_kb(m.from_user.id))
+    await m.answer(
+        "Чтобы задать вопрос или найти бренд, нажми кнопку ниже:",
+        reply_markup=ai_entry_kb(),
+    )
 
 ADMIN_KB = kb(
     "📊 Топ-10 по блицу",
@@ -376,7 +386,7 @@ admin_router = Router()
 async def cmd_start(m: Message):
     clear_user_state(m.from_user.id)
     ensure_user(m.from_user)
-    await m.answer("Привет! Выбери категорию:", reply_markup=main_kb(m.from_user.id))
+    await send_main_menu(m, "Привет! Выбери категорию:")
 
 @main_router.message(F.text == "📊 Моя статистика")
 async def show_stats(m: Message):
@@ -388,7 +398,8 @@ async def show_stats(m: Message):
     for cat in st["brands"].values():
         counts[cat] = counts.get(cat, 0) + 1
     brand_lines = "\n".join(f"— {c}: {counts.get(c, 0)}" for c in categories)
-    await m.answer(
+    await send_main_menu(
+        m,
         f"Пройдено тестов: {st['tests']}\n"
         f"Набрано баллов: {st['points']}\n"
         f"Рекорд в игре \"Верю — не верю\": {st['best_truth']}\n"
@@ -397,7 +408,6 @@ async def show_stats(m: Message):
         "Просмотренные бренды:\n"
         f"{brand_lines}\n"
         f"Последняя активность: {last}",
-        reply_markup=main_kb(m.from_user.id),
     )
 
 @main_router.message(F.text == "🗂️ Меню брендов")
@@ -412,7 +422,7 @@ async def request_phone(m: Message):
 @dp.message(lambda m: m.contact is not None)
 async def save_phone(m: Message):
     set_phone(m.from_user.id, m.contact.phone_number)
-    await m.answer("Спасибо! Телефон сохранён", reply_markup=main_kb(m.from_user.id))
+    await send_main_menu(m, "Спасибо! Телефон сохранён")
 
 @main_router.message(lambda m: m.text == "👑 Админ-панель" and m.from_user.id in ADMIN_IDS)
 async def admin_menu(m: Message):
@@ -476,7 +486,7 @@ async def ask_phone_admin(m: Message):
 @admin_router.message(F.text == "🏠 Главное меню")
 async def admin_to_main(m: Message):
     ADMIN_STATE.pop(m.from_user.id, None)
-    await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
+    await send_main_menu(m, "Главное меню")
 
 @admin_router.message(lambda m: m.from_user.id in ADMIN_STATE)
 async def handle_admin_input(m: Message):
@@ -529,7 +539,7 @@ async def handle_admin_input(m: Message):
 @brand_menu_router.message(F.text == "Назад")
 async def brand_menu_back(m: Message):
     clear_user_state(m.from_user.id)
-    await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
+    await send_main_menu(m, "Главное меню")
 
 
 
@@ -1168,12 +1178,6 @@ async def jagermeister_info(m: Message):
         parse_mode="HTML"
     )
 
-
-
-
-search_router = Router()
-SEARCH_ACTIVE: set[int] = set()
-
 BRANDS: dict[str, tuple[callable, list[str]]] = {
     "Monkey Shoulder": (monkey_shoulder, [
         "monkey shoulder", "monkey", "mon", "манки", "монки", "манкей", "манки шолдер"
@@ -1290,8 +1294,7 @@ suggest_router = Router()
 
 def _has_partial_match(m: Message) -> bool:
     if (
-        m.from_user.id in SEARCH_ACTIVE
-        or m.from_user.id in USER_STATE
+        m.from_user.id in USER_STATE
         or m.from_user.id in GAME_STATE
         or m.from_user.id in ASSOC_STATE
         or m.from_user.id in BLITZ_STATE
@@ -1332,51 +1335,6 @@ async def suggest_brands(m: Message):
 # Map canonical brand names in lowercase for exact-match check
 CANONICAL_MAP = {name.lower(): name for name in BRANDS}
 
-@search_router.message(F.text == "🔍 Поиск")
-async def search_start(m: Message):
-    SEARCH_ACTIVE.add(m.from_user.id)
-    await m.answer(
-        "Введите часть названия бренда (например: глен, glen, грант, пауланер):",
-        reply_markup=ReplyKeyboardRemove(),
-    )
-
-
-@search_router.message(
-    lambda m: m.from_user.id in SEARCH_ACTIVE
-    and normalize(m.text) not in ALIAS_MAP
-)
-async def process_search(m: Message):
-    text = m.text.strip()
-    normalized = normalize(text)
-
-    if normalized in {"отмена", "назад"}:
-        SEARCH_ACTIVE.discard(m.from_user.id)
-        await m.answer("Поиск отменён", reply_markup=main_kb(m.from_user.id))
-        return
-
-
-    # Ищем все бренды, где есть совпадение
-    matches: list[str] = []
-    for brand_name, (_, aliases) in BRANDS.items():
-        for alias in aliases + [brand_name]:
-            if normalized in normalize(alias):
-                matches.append(brand_name)
-                break
-
-    # Убираем дубликаты
-    matches = list(dict.fromkeys(matches))
-
-    if not matches:
-        await m.answer("Ничего не найдено. Попробуйте ещё раз или нажмите Отмена.")
-        return
-
-    builder = ReplyKeyboardBuilder()
-    for brand in matches:
-        builder.add(KeyboardButton(text=brand))
-    builder.add(KeyboardButton(text="Отмена"))
-    builder.adjust(1)
-    await m.answer("Выберите бренд:", reply_markup=builder.as_markup(resize_keyboard=True))
-from random import shuffle, sample
 
 tests_router = Router()
 game_router = Router()
@@ -1677,7 +1635,7 @@ async def test_answer(m: Message):
     st = USER_STATE[m.from_user.id]
     if m.text == "Главное меню":
         USER_STATE.pop(m.from_user.id, None)
-        await m.answer("Вы вернулись в главное меню", reply_markup=main_kb(m.from_user.id))
+        await send_main_menu(m, "Вы вернулись в главное меню")
         return
     if m.text == st["correct"]:
         st["score"] += 1
@@ -1718,7 +1676,7 @@ async def start_blitz_game(m: Message):
 @game_router.message(lambda m: m.text == "Назад к меню")
 async def game_back(m: Message):
     clear_user_state(m.from_user.id)
-    await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
+    await send_main_menu(m, "Главное меню")
 
 async def send_truth(m: Message):
     st = GAME_STATE[m.from_user.id]
@@ -1735,9 +1693,9 @@ async def send_truth(m: Message):
             remark = "👍 Отлично!"
         else:
             remark = "🏆 Идеально!"
-        await m.answer(
+        await send_main_menu(
+            m,
             f"Игра окончена! Правильных ответов: {score}/{total}\n{remark}\nРекорд: {best}",
-            reply_markup=main_kb(m.from_user.id),
         )
         GAME_STATE.pop(m.from_user.id, None)
         return
@@ -1753,7 +1711,7 @@ async def truth_answer(m: Message):
     if m.text not in {"Верю", "Не верю"}:
         if m.text == "Главное меню":
             GAME_STATE.pop(m.from_user.id, None)
-            await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
+            await send_main_menu(m, "Главное меню")
         return
     st = GAME_STATE[m.from_user.id]
     user_val = m.text == "Верю"
@@ -1780,9 +1738,9 @@ async def send_assoc(m: Message):
             remark = "👍 Отлично!"
         else:
             remark = "🏆 Идеально!"
-        await m.answer(
+        await send_main_menu(
+            m,
             f"Игра окончена! Правильных ответов: {score}/{total}\n{remark}\nРекорд: {best}",
-            reply_markup=main_kb(m.from_user.id),
         )
         ASSOC_STATE.pop(m.from_user.id, None)
         return
@@ -1799,7 +1757,7 @@ async def send_assoc(m: Message):
 async def assoc_answer(m: Message):
     if m.text == "🏠 Главное меню":
         ASSOC_STATE.pop(m.from_user.id, None)
-        await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
+        await send_main_menu(m, "Главное меню")
         return
     st = ASSOC_STATE[m.from_user.id]
     if m.text == st["correct"]:
@@ -1825,9 +1783,9 @@ async def send_blitz(m: Message):
             remark = "👍 Отлично!"
         else:
             remark = "🏆 Идеально!"
-        await m.answer(
+        await send_main_menu(
+            m,
             f"Игра окончена! Правильных ответов: {score}/{total}\n{remark}\nРекорд: {best}",
-            reply_markup=main_kb(m.from_user.id),
         )
         BLITZ_STATE.pop(m.from_user.id, None)
         return
@@ -1844,7 +1802,7 @@ async def send_blitz(m: Message):
 async def blitz_answer(m: Message):
     if m.text == "🏠 Главное меню":
         BLITZ_STATE.pop(m.from_user.id, None)
-        await m.answer("Главное меню", reply_markup=main_kb(m.from_user.id))
+        await send_main_menu(m, "Главное меню")
         return
     st = BLITZ_STATE[m.from_user.id]
     if m.text == st["correct"]:
@@ -1861,7 +1819,6 @@ async def get_file_id(m: Message):
     await m.answer(f"✅ Получен file_id:\n<code>{m.photo[-1].file_id}</code>")
 
 dp.include_routers(
-    search_router,
     brand_lookup_router,
     main_router,
     admin_router,
@@ -1874,7 +1831,7 @@ dp.include_routers(
     jager_router,
     brand_menu_router,
     suggest_router,
-    ai_helper_router
+    ai_live_router,
 )
 
 
