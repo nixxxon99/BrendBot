@@ -14,6 +14,7 @@ from aiogram.types import (
     ReplyKeyboardRemove, Contact
 )
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from routers.ai_helper import router as ai_helper_router
 
 API_TOKEN = os.getenv("TOKEN")
 if not API_TOKEN:
@@ -1873,6 +1874,7 @@ dp.include_routers(
     jager_router,
     brand_menu_router,
     suggest_router,
+    ai_helper_router
 )
 
 
