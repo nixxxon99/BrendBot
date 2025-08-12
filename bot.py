@@ -21,9 +21,9 @@ from routers.ai_live import router as ai_live_router
 # Load environment variables from .env if present
 load_dotenv()
 
-API_TOKEN = os.getenv("TOKEN")
+API_TOKEN = os.getenv("API_TOKEN")
 if not API_TOKEN:
-    raise RuntimeError("TOKEN env-var is required!")
+    raise RuntimeError("API_TOKEN env-var is required!")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s — %(levelname)s — %(message)s")
 bot: Bot = Bot(API_TOKEN, parse_mode="HTML")
@@ -320,7 +320,7 @@ def ai_entry_kb():
 async def send_main_menu(m: Message, text: str):
     await m.answer(text, reply_markup=main_kb(m.from_user.id))
     await m.answer(
-        "Чтобы задать вопрос или найти бренд, нажми кнопку ниже:",
+        "Чтобы задать вопрос или найти бренд, нажмите кнопку ниже:",
         reply_markup=ai_entry_kb(),
     )
 
@@ -390,7 +390,7 @@ admin_router = Router()
 async def cmd_start(m: Message):
     clear_user_state(m.from_user.id)
     ensure_user(m.from_user)
-    await send_main_menu(m, "Привет! Выбери категорию:")
+    await send_main_menu(m, "Привет! Выбери режим:")
 
 @main_router.message(F.text == "📊 Моя статистика")
 async def show_stats(m: Message):
